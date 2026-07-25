@@ -68,7 +68,7 @@ function ReportLoadingState() {
   )
 }
 
-function ReportErrorState({ state }: { state: 'not-ready' | 'not-found' | 'forbidden' | 'unknown-error' }) {
+function ReportErrorState({ state, error }: { state: 'not-ready' | 'not-found' | 'forbidden' | 'unknown-error'; error?: { code?: string; message?: string } | null }) {
   const content = {
     'not-ready': {
       code: 'REPORT_NOT_READY',
@@ -76,19 +76,19 @@ function ReportErrorState({ state }: { state: 'not-ready' | 'not-found' | 'forbi
       description: '채점 결과를 정리하고 있습니다. 잠시 후 다시 확인해 주세요.',
     },
     'not-found': {
-      code: 'REPORT_NOT_FOUND',
+      code: error?.code || 'REPORT_NOT_FOUND',
       title: '결과 리포트를 찾을 수 없습니다',
-      description: '삭제되었거나 존재하지 않는 학습 결과입니다.',
+      description: error?.message || '삭제되었거나 존재하지 않는 학습 결과입니다.',
     },
     forbidden: {
-      code: 'FORBIDDEN',
+      code: error?.code || 'FORBIDDEN',
       title: '결과 리포트에 접근할 수 없습니다',
-      description: '본인의 학습 결과만 확인할 수 있습니다.',
+      description: error?.message || '본인의 학습 결과만 확인할 수 있습니다.',
     },
     'unknown-error': {
-      code: 'UNKNOWN_ERROR',
+      code: error?.code || 'UNKNOWN_ERROR',
       title: '일시적인 오류가 발생했습니다',
-      description: '네트워크 상태가 불안정하거나 서버에 문제가 발생했습니다.',
+      description: error?.message || '네트워크 상태가 불안정하거나 서버에 문제가 발생했습니다.',
     },
   }[state]
 
@@ -114,7 +114,7 @@ export function ResultReportPage() {
     else if (error?.status === 403) state = 'forbidden'
     else if (!error && !report) state = 'not-ready'
     
-    return <ReportErrorState state={state} />
+    return <ReportErrorState error={error} state={state} />
   }
   const incorrectCount = report.totalCount - report.correctCount
   const scoreStyle = { '--result-score': `${report.accuracyRate * 3.6}deg` } as CSSProperties
