@@ -103,13 +103,14 @@ function QuizErrorScreen({ message, onRetry }: QuizErrorScreenProps) {
 // ─── 제출 에러 토스트 ─────────────────────────────────────────────────────────
 
 interface SubmitErrorToastProps {
+  message?: string
   onDismiss: () => void
 }
 
-function SubmitErrorToast({ onDismiss }: SubmitErrorToastProps) {
+function SubmitErrorToast({ message, onDismiss }: SubmitErrorToastProps) {
   return (
     <div className="quiz-submit-error" role="alert">
-      <p>제출 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.</p>
+      <p>{message || '답안 제출 중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'}</p>
       <button onClick={onDismiss} type="button" aria-label="오류 메시지 닫기">✕</button>
     </div>
   )
@@ -173,11 +174,11 @@ export function QuizPage() {
           if (cancelled) return
 
           attemptId = startResult.attemptId
-        } catch {
+        } catch (error: unknown) {
           if (!cancelled) {
             setPhase({
               status: 'error',
-              message: '퀴즈를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+              message: error instanceof ApiError ? error.message : '퀴즈를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.',
             })
           }
           return
@@ -189,13 +190,13 @@ export function QuizPage() {
         if (cancelled) return
 
         setPhase({ status: 'ready', attemptId, detail })
-      } catch {
+      } catch (error: unknown) {
         if (!cancelled) {
           // 다음 재시도 시 start를 건너뛰고 fetch부터 재개
           pendingAttemptRef.current = { quizId, attemptId }
           setPhase({
             status: 'error',
-            message: '문제를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.',
+            message: error instanceof ApiError ? error.message : '문제를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.',
           })
         }
       }

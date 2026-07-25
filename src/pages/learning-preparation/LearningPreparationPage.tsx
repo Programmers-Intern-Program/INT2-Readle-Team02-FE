@@ -92,7 +92,7 @@ export function LearningPreparationPage() {
   const isRoutingRef = useRef(false)
   const hasTriggeredCreateRef = useRef(false)
 
-  const { data: validationResponse, isError: isValidationError, refetch: retryValidation } = useValidationPolling(contentId)
+  const { data: validationResponse, isError: isValidationError, error: useValidationPollingError, refetch: retryValidation } = useValidationPolling(contentId)
   const validationStatus = validationResponse?.status
 
   const createQuizMutation = useCreateQuiz()
@@ -157,8 +157,10 @@ export function LearningPreparationPage() {
   const hasPipelineError = isRejected || isFailed || isValidationError || isQuizCreateError
 
   const errorMessage = isQuizCreateError
-    ? '퀴즈 생성 중 오류가 발생했습니다.'
-    : (validationResponse?.message ?? '콘텐츠 검증 중 문제가 발생했습니다.')
+    ? (createQuizMutation.error?.message || 'AI 퀴즈 생성 처리 중 응답이 지연되었습니다. 잠시 후 다시 시도해 주세요.')
+    : isValidationError
+      ? (useValidationPollingError?.message || '네트워크 연결이 불안정하여 콘텐츠 검증 상태를 확인하지 못했습니다.')
+      : (validationResponse?.message || (isFailed ? '콘텐츠 검증 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' : '개발 및 학습에 적합하지 않은 콘텐츠로 판정되었습니다.'))
 
   const handleBypass = () => {
     if (!createQuizMutation.isPending) {
@@ -261,7 +263,7 @@ export function LearningPreparationPage() {
             </div>
             {isQuizCreateError ? (
               <ErrorFeedbackPanel
-                message="퀴즈 생성 중 오류가 발생했습니다."
+                message={errorMessage}
                 primaryAction={{
                   text: '퀴즈 생성 재시도',
                   onClick: handleRetryQuiz,
@@ -270,7 +272,7 @@ export function LearningPreparationPage() {
               />
             ) : isValidationError ? (
               <ErrorFeedbackPanel
-                message="검증 상태를 가져오지 못했습니다."
+                message={errorMessage}
                 primaryAction={{
                   text: '다시 시도',
                   onClick: () => void retryValidation(),
