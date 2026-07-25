@@ -133,6 +133,7 @@ export function ResultReportPage() {
           </div>
           {sourceUrl && (
             <a
+              aria-label="원본 아티클 보기, 새 탭에서 열림"
               className="result-source-link"
               href={sourceUrl}
               rel="noopener noreferrer"

@@ -55,7 +55,7 @@ describe('ResultReportPage', () => {
     expect(scoreRing).toBeInTheDocument()
     expect(scoreRing).toHaveTextContent('40%')
     expect(screen.getByText('문제별 풀이 결과')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '원본 아티클 보기' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '원본 아티클 보기, 새 탭에서 열림' })).toHaveAttribute(
       'href',
       'https://example.com/spring-transactional',
     )
@@ -69,7 +69,9 @@ describe('ResultReportPage', () => {
     renderPage()
 
     expect(await screen.findByText('Spring @Transactional 심층 이해')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: '원본 아티클 보기' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: '원본 아티클 보기, 새 탭에서 열림' }),
+    ).not.toBeInTheDocument()
   })
 
   it('404 에러 상태를 렌더링한다', async () => {
