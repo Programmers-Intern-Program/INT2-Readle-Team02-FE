@@ -8,7 +8,11 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it, afterEach, vi } from 'vitest'
 import { ResultReportPage } from '@/pages/result-report/ResultReportPage'
-import { formatDuration, mockResultReport } from '@/pages/result-report/model/resultReport'
+import {
+  formatDuration,
+  getSafeSourceUrl,
+  mockResultReport,
+} from '@/pages/result-report/model/resultReport'
 import { getResultReportDetail } from '@/shared/api/report'
 import { ApiError } from '@/shared/api/error'
 
@@ -51,6 +55,21 @@ describe('ResultReportPage', () => {
     expect(scoreRing).toBeInTheDocument()
     expect(scoreRing).toHaveTextContent('40%')
     expect(screen.getByText('문제별 풀이 결과')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '원본 아티클 보기' })).toHaveAttribute(
+      'href',
+      'https://example.com/spring-transactional',
+    )
+  })
+
+  it('원본 URL이 없는 직접 입력 결과에는 원본 링크를 표시하지 않는다', async () => {
+    vi.mocked(getResultReportDetail).mockResolvedValueOnce({
+      ...mockResultReport,
+      sourceUrl: null,
+    })
+    renderPage()
+
+    expect(await screen.findByText('Spring @Transactional 심층 이해')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '원본 아티클 보기' })).not.toBeInTheDocument()
   })
 
   it('404 에러 상태를 렌더링한다', async () => {
@@ -125,5 +144,13 @@ describe('result report model', () => {
 
   it('풀이 시간을 분과 초로 표시한다', () => {
     expect(formatDuration(428)).toBe('7분 08초')
+  })
+
+  it('HTTP(S) 원본 URL만 외부 링크로 허용한다', () => {
+    expect(getSafeSourceUrl('https://example.com/article')).toBe('https://example.com/article')
+    expect(getSafeSourceUrl('http://example.com/article')).toBe('http://example.com/article')
+    expect(getSafeSourceUrl('javascript:alert(1)')).toBeNull()
+    expect(getSafeSourceUrl('not-a-url')).toBeNull()
+    expect(getSafeSourceUrl(null)).toBeNull()
   })
 })

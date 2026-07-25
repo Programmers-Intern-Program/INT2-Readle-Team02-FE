@@ -26,6 +26,7 @@ export interface ResultReport {
   solveDurationSeconds: number
   results: QuestionResult[]
   quizSetId: number
+  sourceUrl: string | null
   tags: string[]
   title: string
   totalCount: number
@@ -41,6 +42,7 @@ export const mockResultReport: ResultReport = {
   totalCount: 5,
   solveDurationSeconds: 428,
   completedAt: '2026-07-16T02:48:00Z',
+  sourceUrl: 'https://example.com/spring-transactional',
   tags: ['spring', 'transaction', 'jpa'],
   results: [
     {
@@ -121,4 +123,15 @@ export function formatCompletedAt(value: string) {
     timeStyle: 'short',
     timeZone: 'Asia/Seoul',
   }).format(parseResultReportTimestamp(value))
+}
+
+export function getSafeSourceUrl(value?: string | null) {
+  if (!value) return null
+
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null
+  } catch {
+    return null
+  }
 }
