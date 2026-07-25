@@ -72,6 +72,33 @@
   font-size: var(--text-caption);
 }
 
+.result-source-link {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  border-bottom: 1px solid transparent;
+  color: var(--color-brand-400);
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.result-source-link:hover {
+  border-bottom-color: currentcolor;
+  color: var(--color-text-primary);
+}
+
+.result-source-link:focus-visible {
+  border-radius: 0.25rem;
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 0.25rem;
+}
+
 .result-score-ring {
   display: grid;
   width: 9.5rem;

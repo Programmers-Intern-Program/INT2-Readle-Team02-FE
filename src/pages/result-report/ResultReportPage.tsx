@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import {
   formatCompletedAt,
   formatDuration,
+  getSafeSourceUrl,
   type QuestionResult,
 } from '@/pages/result-report/model/resultReport'
 import { questionTypeLabel } from '@/pages/quiz/model/quiz'
@@ -118,6 +119,7 @@ export function ResultReportPage() {
   }
   const incorrectCount = report.totalCount - report.correctCount
   const scoreStyle = { '--result-score': `${report.accuracyRate * 3.6}deg` } as CSSProperties
+  const sourceUrl = getSafeSourceUrl(report.sourceUrl)
 
   return (
     <div className="result-page py-8 sm:py-12 lg:py-16">
@@ -129,6 +131,18 @@ export function ResultReportPage() {
           <div aria-label="퀴즈 태그" className="result-tags">
             {report.tags.map((tag) => <span key={tag}>#{tag}</span>)}
           </div>
+          {sourceUrl && (
+            <a
+              aria-label="원본 아티클 보기, 새 탭에서 열림"
+              className="result-source-link"
+              href={sourceUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              원본 아티클 보기
+              <span aria-hidden="true">↗</span>
+            </a>
+          )}
         </div>
 
         <div aria-label={`정답률 ${report.accuracyRate}%`} className="result-score-ring" style={scoreStyle}>
