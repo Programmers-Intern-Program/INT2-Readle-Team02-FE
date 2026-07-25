@@ -147,8 +147,13 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
               setActiveStage(gradingSteps.length - 1)
               setStatus('success')
               return
-            } catch {
+            } catch (fallbackError: unknown) {
               if (!isMounted) return
+              if (fallbackError instanceof ApiError && fallbackError.message.trim()) {
+                setErrorMessage(fallbackError.message)
+              } else if (fallbackError instanceof Error && fallbackError.message.trim()) {
+                setErrorMessage(fallbackError.message)
+              }
               setStatus('error')
               return
             }

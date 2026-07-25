@@ -101,22 +101,6 @@ function QuizErrorScreen({ message, onRetry }: QuizErrorScreenProps) {
   )
 }
 
-// ─── 제출 에러 토스트 ─────────────────────────────────────────────────────────
-
-interface SubmitErrorToastProps {
-  message?: string
-  onDismiss: () => void
-}
-
-function SubmitErrorToast({ message, onDismiss }: SubmitErrorToastProps) {
-  return (
-    <div className="quiz-submit-error" role="alert">
-      <p>{message || '답안 제출 중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'}</p>
-      <button onClick={onDismiss} type="button" aria-label="오류 메시지 닫기">✕</button>
-    </div>
-  )
-}
-
 // ─── QuizPage ────────────────────────────────────────────────────────────────
 
 type LoadPhase =
@@ -135,20 +119,8 @@ export function QuizPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [notice, setNotice] = useState<string>()
-  const [showSubmitError, setShowSubmitError] = useState(false)
-  const [submitErrorMsg, setSubmitErrorMsg] = useState<string | undefined>(undefined)
   // 재시도 트리거 — increment하면 effect가 재실행됨
   const [retryCount, setRetryCount] = useState(0)
-
-  const triggerSubmitError = (message?: string) => {
-    setSubmitErrorMsg(message)
-    setShowSubmitError(true)
-  }
-
-  const dismissSubmitError = () => {
-    setShowSubmitError(false)
-    setSubmitErrorMsg(undefined)
-  }
 
   // fetchQuizAttemptDetail 실패 시 attemptId 보존 — 재시도 시 startQuizAttempt를 건너뛰엄
   const pendingAttemptRef = useRef<{ quizId: number; attemptId: number } | null>(null)
@@ -162,9 +134,10 @@ export function QuizPage() {
     setCurrentIndex(0)
     setShowConfirmation(false)
     setNotice(undefined)
-    setShowSubmitError(false)
     setPhase({ status: 'loading' })
   }
+
+  const handleRetryLoad = () => setRetryCount((c) => c + 1)
 
   useEffect(() => {
     let cancelled = false
@@ -190,7 +163,9 @@ export function QuizPage() {
           if (!cancelled) {
             setPhase({
               status: 'error',
-              message: error instanceof ApiError ? error.message : '퀴즈를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+              message: error instanceof ApiError && error.message.trim()
+                ? error.message
+                : '퀴즈를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.',
             })
           }
           return
@@ -208,7 +183,9 @@ export function QuizPage() {
           pendingAttemptRef.current = { quizId, attemptId }
           setPhase({
             status: 'error',
-            message: error instanceof ApiError ? error.message : '문제를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.',
+            message: error instanceof ApiError && error.message.trim()
+              ? error.message
+              : '문제를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.',
           })
         }
       }
@@ -236,19 +213,12 @@ export function QuizPage() {
     )
   }
 
-  // ─── 로딩 / 에러 단계 ──────────────────────────────────────────────────────
+  // ─── 로딩 / 에러 상태 처리 ──────────────────────────────────────────────────
 
-  if (phase.status === 'loading') {
-    return <QuizLoadingScreen />
-  }
+  if (phase.status === 'loading') return <QuizLoadingScreen />
 
   if (phase.status === 'error') {
-    return (
-      <QuizErrorScreen
-        message={phase.message}
-        onRetry={() => setRetryCount((c) => c + 1)}
-      />
-    )
+    return <QuizErrorScreen message={phase.message} onRetry={handleRetryLoad} />
   }
 
   // ─── 퀴즈 풀이 단계 ────────────────────────────────────────────────────────
@@ -307,7 +277,6 @@ export function QuizPage() {
     if (phase.status === 'submitting') return
     setShowConfirmation(false)
     setPhase({ status: 'submitting', attemptId, detail })
-    setShowSubmitError(false)
 
     const submitRequest = formatAnswersForSubmit(detail.questions, answers)
     
@@ -387,10 +356,6 @@ export function QuizPage() {
         <div className="quiz-submit-overlay" role="status" aria-live="polite">
           <span className="sr-only">답안을 제출하고 있습니다…</span>
         </div>
-      )}
-
-      {showSubmitError && (
-        <SubmitErrorToast message={submitErrorMsg} onDismiss={dismissSubmitError} />
       )}
     </div>
   )
