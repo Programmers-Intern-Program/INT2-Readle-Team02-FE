@@ -14,6 +14,7 @@ import {
   type QuizQuestion,
 } from '@/pages/quiz/model/quiz'
 import { ROUTES } from '@/shared/config/routes'
+import { ApiError } from '@/shared/api/error'
 import '@/pages/quiz/QuizPage.css'
 
 import { QuizNavigator } from '@/pages/quiz/ui/QuizNavigator'
@@ -135,8 +136,19 @@ export function QuizPage() {
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [notice, setNotice] = useState<string>()
   const [showSubmitError, setShowSubmitError] = useState(false)
+  const [submitErrorMsg, setSubmitErrorMsg] = useState<string | undefined>(undefined)
   // 재시도 트리거 — increment하면 effect가 재실행됨
   const [retryCount, setRetryCount] = useState(0)
+
+  const triggerSubmitError = (message?: string) => {
+    setSubmitErrorMsg(message)
+    setShowSubmitError(true)
+  }
+
+  const dismissSubmitError = () => {
+    setShowSubmitError(false)
+    setSubmitErrorMsg(undefined)
+  }
 
   // fetchQuizAttemptDetail 실패 시 attemptId 보존 — 재시도 시 startQuizAttempt를 건너뛰엄
   const pendingAttemptRef = useRef<{ quizId: number; attemptId: number } | null>(null)
@@ -378,7 +390,7 @@ export function QuizPage() {
       )}
 
       {showSubmitError && (
-        <SubmitErrorToast onDismiss={() => setShowSubmitError(false)} />
+        <SubmitErrorToast message={submitErrorMsg} onDismiss={dismissSubmitError} />
       )}
     </div>
   )
