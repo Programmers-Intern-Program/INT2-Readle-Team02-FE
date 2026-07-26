@@ -21,12 +21,38 @@ interface StoredFormState {
   isExtracted: boolean
 }
 
+function isValidStoredState(data: any): data is StoredFormState {
+  if (!data || typeof data !== 'object') return false
+  if (data.mode !== 'URL' && data.mode !== 'TEXT') return false
+  if (typeof data.isExtracted !== 'boolean') return false
+  
+  const isValidValues = (val: any) => {
+    return (
+      val && typeof val === 'object' &&
+      typeof val.url === 'string' &&
+      typeof val.title === 'string' &&
+      typeof val.content === 'string'
+    )
+  }
+
+  if (!isValidValues(data.urlValues)) return false
+  if (!isValidValues(data.textValues)) return false
+
+  return true
+}
+
 const getInitialState = (): StoredFormState => {
   try {
     if (typeof sessionStorage !== 'undefined') {
       const stored = sessionStorage.getItem(STORAGE_KEY)
       if (stored) {
-        return JSON.parse(stored) as StoredFormState
+        const parsed = JSON.parse(stored)
+        if (isValidStoredState(parsed)) {
+          return parsed
+        } else {
+          console.warn('임시 저장된 데이터의 형식이 올바르지 않아 초기화합니다.')
+          sessionStorage.removeItem(STORAGE_KEY)
+        }
       }
     }
   } catch (e) {
