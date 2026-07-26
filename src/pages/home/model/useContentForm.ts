@@ -1,5 +1,5 @@
 import type { SyntheticEvent } from 'react'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { generatePath, useNavigate } from 'react-router'
 import { ROUTES } from '@/shared/config/routes'
 import {
@@ -12,19 +12,61 @@ import { useExtractContent } from '@/pages/home/api/useExtractContent'
 import { useCreateContent } from '@/pages/home/api/useCreateContent'
 import type { ContentCreateRequest } from '@/shared/api/types'
 
+const STORAGE_KEY = 'learningContentFormState'
+
+interface StoredFormState {
+  mode: InputMode
+  urlValues: ContentInputValues
+  textValues: ContentInputValues
+  isExtracted: boolean
+}
+
+const getInitialState = (): StoredFormState => {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      const stored = sessionStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        return JSON.parse(stored) as StoredFormState
+      }
+    }
+  } catch (e) {
+    console.error('이전 입력 데이터를 불러오는데 실패했습니다:', e)
+  }
+  return {
+    mode: 'URL',
+    urlValues: initialContentInputValues,
+    textValues: initialContentInputValues,
+    isExtracted: false,
+  }
+}
+
 export function useContentForm() {
   const navigate = useNavigate()
 
   const extractContent = useExtractContent()
   const createContent = useCreateContent()
 
-  const [mode, setMode] = useState<InputMode>('URL')
-  const [urlValues, setUrlValues] = useState<ContentInputValues>(initialContentInputValues)
-  const [textValues, setTextValues] = useState<ContentInputValues>(initialContentInputValues)
+  const initialState = getInitialState()
+
+  const [mode, setMode] = useState<InputMode>(initialState.mode)
+  const [urlValues, setUrlValues] = useState<ContentInputValues>(initialState.urlValues)
+  const [textValues, setTextValues] = useState<ContentInputValues>(initialState.textValues)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
-  const [isExtracted, setIsExtracted] = useState(false)
+  const [isExtracted, setIsExtracted] = useState(initialState.isExtracted)
   const modeRef = useRef<InputMode>(mode)
+
   const submitGenerationRef = useRef(0)
+
+  useEffect(() => {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        const stateToStore: StoredFormState = { mode, urlValues, textValues, isExtracted }
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stateToStore))
+      }
+    } catch (e) {
+      console.error('입력 데이터를 임시 저장하는데 실패했습니다:', e)
+    }
+  }, [mode, urlValues, textValues, isExtracted])
 
   const values = mode === 'URL' ? urlValues : textValues
   const errors = validateContentInput(mode, values, isExtracted)

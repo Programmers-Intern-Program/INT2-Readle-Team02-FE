@@ -30,6 +30,7 @@ describe('HomePage', () => {
 
   afterEach(() => {
     cleanup()
+    sessionStorage.clear()
   })
 
   it('콘텐츠 입력의 핵심 UI를 렌더링한다', () => {
