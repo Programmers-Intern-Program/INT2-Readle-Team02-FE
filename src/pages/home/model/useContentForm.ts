@@ -21,22 +21,25 @@ interface StoredFormState {
   isExtracted: boolean
 }
 
-function isValidStoredState(data: any): data is StoredFormState {
+function isValidStoredState(data: unknown): data is StoredFormState {
   if (!data || typeof data !== 'object') return false
-  if (data.mode !== 'URL' && data.mode !== 'TEXT') return false
-  if (typeof data.isExtracted !== 'boolean') return false
   
-  const isValidValues = (val: any) => {
+  const stateObj = data as Record<string, unknown>
+  if (stateObj.mode !== 'URL' && stateObj.mode !== 'TEXT') return false
+  if (typeof stateObj.isExtracted !== 'boolean') return false
+  
+  const isValidValues = (val: unknown) => {
+    if (!val || typeof val !== 'object') return false
+    const valObj = val as Record<string, unknown>
     return (
-      val && typeof val === 'object' &&
-      typeof val.url === 'string' &&
-      typeof val.title === 'string' &&
-      typeof val.content === 'string'
+      typeof valObj.url === 'string' &&
+      typeof valObj.title === 'string' &&
+      typeof valObj.content === 'string'
     )
   }
 
-  if (!isValidValues(data.urlValues)) return false
-  if (!isValidValues(data.textValues)) return false
+  if (!isValidValues(stateObj.urlValues)) return false
+  if (!isValidValues(stateObj.textValues)) return false
 
   return true
 }
