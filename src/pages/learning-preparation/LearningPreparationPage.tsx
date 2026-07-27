@@ -163,11 +163,11 @@ export function LearningPreparationPage() {
   const progress = complete ? 100 : Math.round(((activeStage + 0.35) / preparationSteps.length) * 100)
 
   const pollingAttemptRef = useRef(0)
+  const [isPollingTimeout, setIsPollingTimeout] = useState(false)
 
   const isRejected = validationStatus === 'REJECTED'
   const isFailed = validationStatus === 'FAILED'
   const isGenerationInProgressError = createQuizMutation.error?.code === 'QUIZ_GENERATION_IN_PROGRESS'
-  const isPollingTimeout = pollingAttemptRef.current >= 20
   const isQuizCreateError = createQuizMutation.isError && (!isGenerationInProgressError || isPollingTimeout)
   const bypassAvailable = validationResponse?.bypassAvailable ?? false
 
@@ -177,7 +177,12 @@ export function LearningPreparationPage() {
   useEffect(() => {
     if (createQuizMutation.isError && isGenerationInProgressError && !isPollingTimeout) {
       const timer = window.setTimeout(() => {
-        pollingAttemptRef.current += 1
+        const next = pollingAttemptRef.current + 1
+        pollingAttemptRef.current = next
+        if (next >= 20) {
+          setIsPollingTimeout(true)
+          return
+        }
         createQuizMutation.reset()
         createQuizMutation.mutate({ sourceValidationId: contentId })
       }, 3000)
@@ -201,6 +206,7 @@ export function LearningPreparationPage() {
 
   const handleRetryQuiz = () => {
     pollingAttemptRef.current = 0
+    setIsPollingTimeout(false)
     createQuizMutation.reset()
     createQuizMutation.mutate({ sourceValidationId: contentId })
   }
