@@ -137,6 +137,15 @@ export function LearningPreparationPage() {
     if (createQuizMutation.isSuccess && createQuizMutation.data && !isRoutingRef.current) {
       isRoutingRef.current = true
       const quizId = createQuizMutation.data.quizId
+
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem('learningContentFormState')
+        }
+      } catch (e) {
+        console.error('임시 저장된 입력 데이터를 지우는데 실패했습니다:', e)
+      }
+
       const timer = window.setTimeout(() => {
         void navigate(generatePath(ROUTES.quiz, { quizId: String(quizId) }))
       }, 1000)

@@ -1,5 +1,5 @@
 import type { SyntheticEvent } from 'react'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { generatePath, useNavigate } from 'react-router'
 import { ROUTES } from '@/shared/config/routes'
 import {
@@ -12,19 +12,94 @@ import { useExtractContent } from '@/pages/home/api/useExtractContent'
 import { useCreateContent } from '@/pages/home/api/useCreateContent'
 import type { ContentCreateRequest } from '@/shared/api/types'
 
+const STORAGE_KEY = 'learningContentFormState'
+
+interface StoredFormState {
+  mode: InputMode
+  urlValues: ContentInputValues
+  textValues: ContentInputValues
+  isExtracted: boolean
+}
+
+function isValidStoredState(data: unknown): data is StoredFormState {
+  if (!data || typeof data !== 'object') return false
+  
+  const stateObj = data as Record<string, unknown>
+  if (stateObj.mode !== 'URL' && stateObj.mode !== 'TEXT') return false
+  if (typeof stateObj.isExtracted !== 'boolean') return false
+  
+  const isValidValues = (val: unknown) => {
+    if (!val || typeof val !== 'object') return false
+    const valObj = val as Record<string, unknown>
+    return (
+      typeof valObj.url === 'string' &&
+      typeof valObj.title === 'string' &&
+      typeof valObj.content === 'string'
+    )
+  }
+
+  if (!isValidValues(stateObj.urlValues)) return false
+  if (!isValidValues(stateObj.textValues)) return false
+
+  return true
+}
+
+const getInitialState = (): StoredFormState => {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      const stored = sessionStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (isValidStoredState(parsed)) {
+          return parsed
+        } else {
+          console.warn('임시 저장된 데이터의 형식이 올바르지 않아 초기화합니다.')
+          sessionStorage.removeItem(STORAGE_KEY)
+        }
+      }
+    }
+  } catch (e) {
+    console.error('이전 입력 데이터를 불러오는데 실패했습니다:', e)
+  }
+  return {
+    mode: 'URL',
+    urlValues: initialContentInputValues,
+    textValues: initialContentInputValues,
+    isExtracted: false,
+  }
+}
+
 export function useContentForm() {
   const navigate = useNavigate()
 
   const extractContent = useExtractContent()
   const createContent = useCreateContent()
 
-  const [mode, setMode] = useState<InputMode>('URL')
-  const [urlValues, setUrlValues] = useState<ContentInputValues>(initialContentInputValues)
-  const [textValues, setTextValues] = useState<ContentInputValues>(initialContentInputValues)
+  const initialState = getInitialState()
+
+  const [mode, setMode] = useState<InputMode>(initialState.mode)
+  const [urlValues, setUrlValues] = useState<ContentInputValues>(initialState.urlValues)
+  const [textValues, setTextValues] = useState<ContentInputValues>(initialState.textValues)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
-  const [isExtracted, setIsExtracted] = useState(false)
+  const [isExtracted, setIsExtracted] = useState(initialState.isExtracted)
   const modeRef = useRef<InputMode>(mode)
+
   const submitGenerationRef = useRef(0)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          const stateToStore: StoredFormState = { mode, urlValues, textValues, isExtracted }
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stateToStore))
+        }
+      } catch (e) {
+        console.error('입력 데이터를 임시 저장하는데 실패했습니다:', e)
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [mode, urlValues, textValues, isExtracted])
 
   const values = mode === 'URL' ? urlValues : textValues
   const errors = validateContentInput(mode, values, isExtracted)
