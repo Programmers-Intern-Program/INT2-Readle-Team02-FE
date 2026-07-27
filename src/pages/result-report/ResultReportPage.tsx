@@ -8,6 +8,7 @@ import {
 import { questionTypeLabel } from '@/pages/quiz/model/quiz'
 import { ROUTES } from '@/shared/config/routes'
 import { ErrorMessage, Loading } from '@/shared/ui'
+import { sanitizeErrorMessage } from '@/shared/api/error'
 import { useResultReportDetail } from '@/pages/result-report/api/useResultReportDetail'
 import '@/pages/result-report/ResultReportPage.css'
 
@@ -88,7 +89,7 @@ function ReportErrorState({ state, error }: { state: 'not-ready' | 'not-found' |
     'unknown-error': {
       code: error?.code || 'UNKNOWN_ERROR',
       title: '일시적인 오류가 발생했습니다',
-      description: error?.message || '네트워크 상태가 불안정하거나 서버에 문제가 발생했습니다.',
+      description: sanitizeErrorMessage(error?.message, error?.code) || '네트워크 상태가 불안정하거나 서버에 문제가 발생했습니다.',
     },
   }[state]
 

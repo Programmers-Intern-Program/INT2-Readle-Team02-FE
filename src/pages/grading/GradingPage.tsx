@@ -137,7 +137,7 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
         if (!isMounted) return
         
         if (error instanceof ApiError) {
-          const safeMsg = sanitizeErrorMessage(error.message)
+          const safeMsg = sanitizeErrorMessage(error.message, error.code)
           if (safeMsg) setErrorMessage(safeMsg)
 
           // 중복 제출 에러(이미 처리됨) 시 결과 다시 조회 시도
@@ -152,7 +152,8 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
             } catch (fallbackError: unknown) {
               if (!isMounted) return
               const rawFallbackMsg = (fallbackError instanceof ApiError || fallbackError instanceof Error) ? fallbackError.message : null
-              const safeFallbackMsg = sanitizeErrorMessage(rawFallbackMsg)
+              const fallbackCode = fallbackError instanceof ApiError ? fallbackError.code : null
+              const safeFallbackMsg = sanitizeErrorMessage(rawFallbackMsg, fallbackCode)
               if (safeFallbackMsg) {
                 setErrorMessage(safeFallbackMsg)
               }

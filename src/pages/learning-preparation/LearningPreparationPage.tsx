@@ -158,10 +158,10 @@ export function LearningPreparationPage() {
   const hasPipelineError = isRejected || isFailed || isValidationError || isQuizCreateError
 
   const errorMessage = isQuizCreateError
-    ? (sanitizeErrorMessage(createQuizMutation.error?.message) || 'AI 퀴즈 생성 처리 중 응답이 지연되었습니다. 잠시 후 다시 시도해 주세요.')
+    ? (sanitizeErrorMessage(createQuizMutation.error?.message, createQuizMutation.error?.code) || 'AI 퀴즈 생성 처리 중 응답이 지연되었습니다. 잠시 후 다시 시도해 주세요.')
     : isValidationError
-      ? (sanitizeErrorMessage(useValidationPollingError?.message) || '네트워크 연결이 불안정하여 콘텐츠 검증 상태를 확인하지 못했습니다.')
-      : (sanitizeErrorMessage(validationResponse?.message) || (isFailed ? '콘텐츠 검증 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' : '개발 및 학습에 적합하지 않은 콘텐츠로 판정되었습니다.'))
+      ? (sanitizeErrorMessage(useValidationPollingError?.message, useValidationPollingError?.code) || '네트워크 연결이 불안정하여 콘텐츠 검증 상태를 확인하지 못했습니다.')
+      : (sanitizeErrorMessage(validationResponse?.message, validationResponse?.errorCode) || (isFailed ? '콘텐츠 검증 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' : '개발 및 학습에 적합하지 않은 콘텐츠로 판정되었습니다.'))
 
   const handleBypass = () => {
     if (!createQuizMutation.isPending) {
