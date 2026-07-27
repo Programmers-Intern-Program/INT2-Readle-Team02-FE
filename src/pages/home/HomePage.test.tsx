@@ -58,8 +58,10 @@ describe('HomePage', () => {
 
   describe('URL 추출 동작 통합 테스트', () => {
     it('유효한 URL을 입력하고 제출하면 같은 탭에서 폼이 확장되고 내용이 주입된다', async () => {
+      const sufficientContent = 'a'.repeat(300)
       vi.mocked(contentApi.extractContent).mockResolvedValueOnce({
         ...mockExtractedContent,
+        content: sufficientContent,
       })
       const user = userEvent.setup()
       const queryClient = createTestQueryClient()
@@ -81,8 +83,9 @@ describe('HomePage', () => {
       await user.click(submitButton)
 
       // 추출 성공 후 같은 탭(url)을 유지하면서 성공 메시지와 폼 렌더링 확인
-      const successMessage = await screen.findByText(/성공적으로 불러왔습니다/)
+      const successMessage = await screen.findByRole('status')
       expect(successMessage).toBeInTheDocument()
+      expect(successMessage).toHaveTextContent('성공적으로 불러왔습니다')
 
       const urlTab = screen.getByRole('tab', { name: /URL 가져오기/ })
       expect(urlTab).toHaveAttribute('aria-selected', 'true')
@@ -94,7 +97,7 @@ describe('HomePage', () => {
       const contentTextarea = screen.getByLabelText('학습할 본문')
 
       expect(titleInput).toHaveValue(mockExtractedContent.title)
-      expect(contentTextarea).toHaveValue(mockExtractedContent.content)
+      expect(contentTextarea).toHaveValue(sufficientContent)
       expect(urlInput).toBeDisabled()
 
       // 다시 입력 버튼 동작 확인
@@ -105,6 +108,32 @@ describe('HomePage', () => {
       expect(urlInput).toHaveValue('https://example.com/article')
       expect(screen.queryByText(/성공적으로 불러왔습니다/)).not.toBeInTheDocument()
       expect(screen.getByRole('button', { name: '본문 불러오기' })).toBeInTheDocument()
+    })
+
+    it('추출된 본문이 300자 미만이면 부족 안내를 표시하고 퀴즈 생성을 비활성화한다', async () => {
+      vi.mocked(contentApi.extractContent).mockResolvedValueOnce({
+        ...mockExtractedContent,
+        content: 'a'.repeat(72),
+      })
+      const user = userEvent.setup()
+      const queryClient = createTestQueryClient()
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <HomePage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      )
+
+      await user.type(screen.getByLabelText('기술 아티클 URL'), 'https://example.com/short-article')
+      await user.click(screen.getByRole('button', { name: '본문 불러오기' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('본문을 충분히 불러오지 못했습니다')
+      expect(screen.queryByText(/성공적으로 불러왔습니다/)).not.toBeInTheDocument()
+      expect(screen.getByLabelText('학습할 본문')).toHaveValue('a'.repeat(72))
+      expect(screen.getByText(/최소 300자 이상/)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /분석하고 퀴즈 만들기/ })).toBeDisabled()
     })
 
     it('유효하지 않은 URL 형식을 입력하면 에러 메시지를 표시한다', async () => {
