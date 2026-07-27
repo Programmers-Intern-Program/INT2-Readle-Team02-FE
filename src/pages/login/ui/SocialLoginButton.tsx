@@ -51,10 +51,10 @@ export function SocialLoginButton({ href, provider }: SocialLoginButtonProps) {
 
   return (
     <a
-      className={`flex min-h-control w-full items-center justify-center gap-3 rounded-control border px-control-x py-control-y text-label font-semibold transition-all duration-150 active:scale-98 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 ${
+      className={`group flex min-h-13 w-full items-center justify-center gap-3 rounded-xl border px-control-x py-control-y text-label font-bold shadow-[inset_0_1px_rgb(255_255_255/0.08)] transition-all duration-200 hover:-translate-y-0.5 active:scale-98 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 ${
         isKakao
-          ? 'border-transparent bg-[#FEE500] text-[#191919] hover:bg-[#F5DC00]'
-          : 'border-border-default bg-surface-canvas text-text-primary hover:border-brand-400/40 hover:bg-surface-elevated'
+          ? 'border-transparent bg-[#FEE500] text-[#191919] hover:bg-[#F5DC00] hover:shadow-[0_0.85rem_2.5rem_rgb(254_229_0/0.14)]'
+          : 'border-white/15 bg-white text-[#1F2937] hover:border-white/40 hover:bg-[#F8FAFC] hover:shadow-[0_0.85rem_2.5rem_rgb(255_255_255/0.1)]'
       }`}
       href={href}
     >

@@ -64,6 +64,8 @@ describe('LandingPage', () => {
     expect(html).toContain('북마크는 쌓이는데, 실력은 그대로인가요?')
     expect(html).toContain('입력부터 피드백까지, 하나의 학습 흐름')
     expect(html).toContain('URL 하나면 충분합니다')
+    expect(html).toContain('틀린 이유와 다시 살펴볼 개념을 함께 안내합니다.')
+    expect(html).not.toContain('다시 확인할 원문 구간')
   })
 
   it('로그인과 학습 시작 CTA를 제공하되 기본 상태에서는 모달을 숨긴다', () => {
@@ -99,7 +101,9 @@ describe('LandingPage', () => {
     const html = renderLanding(true)
 
     expect(html).toContain('role="dialog"')
-    expect(html).toContain('다시 만나 반갑습니다')
+    expect(html).toContain('Readle에서 학습을 시작하세요')
+    expect(html).toContain('소셜 로그인으로 안전하게 시작할 수 있어요.')
+    expect(html).not.toContain('이용약관')
     expectOAuthReturnTo(html, '/learn')
     expect(html).not.toContain('Google 로그인 연동은 준비 중입니다.')
     expect(html).not.toContain('카카오 로그인 연동은 준비 중입니다.')

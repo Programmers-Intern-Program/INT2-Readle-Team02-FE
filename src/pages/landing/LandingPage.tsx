@@ -30,7 +30,7 @@ const features = [
     code: '03',
     title: '틀린 이유까지 배우는 피드백',
     description:
-      '정답 여부만 보여주지 않습니다. 놓친 개념과 다시 확인할 원문 구간을 함께 안내합니다.',
+      '정답 여부만 보여주지 않습니다. 틀린 이유와 다시 살펴볼 개념을 함께 안내합니다.',
   },
   {
     code: '04',
@@ -275,7 +275,7 @@ export function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
   return (
     <div className="landing-page text-text-primary">
       <div className="landing-hero-glow" />
-      <header className="sticky top-0 z-50 border-b border-border-glass bg-surface-canvas/72 backdrop-blur-xl">
+      <header className="landing-header sticky top-0 z-50 border-b backdrop-blur-xl">
         <PageContainer className="flex min-h-16 items-center justify-between gap-6">
           <Link
             aria-label="Readle 랜딩 홈"
@@ -285,13 +285,13 @@ export function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
             <BrandLogo />
           </Link>
           <nav aria-label="랜딩 페이지 메뉴" className="hidden items-center gap-7 md:flex">
-            <a className="text-label text-text-muted transition-colors hover:text-text-primary" href="#why-readle">
+            <a className="landing-nav-link text-label font-semibold text-text-secondary" href="#why-readle">
               서비스 소개
             </a>
-            <a className="text-label text-text-muted transition-colors hover:text-text-primary" href="#how-it-works">
+            <a className="landing-nav-link text-label font-semibold text-text-secondary" href="#how-it-works">
               학습 방식
             </a>
-            <a className="text-label text-text-muted transition-colors hover:text-text-primary" href="#features">
+            <a className="landing-nav-link text-label font-semibold text-text-secondary" href="#features">
               핵심 기능
             </a>
           </nav>
@@ -320,7 +320,7 @@ export function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
             </div>
           ) : (
             <button
-              className="rounded-control border border-border-strong bg-surface-panel px-4 py-2 text-label font-semibold text-text-primary transition-all hover:border-brand-400/60 hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"
+              className="landing-login-button rounded-control border px-4 py-2 text-label font-bold text-text-primary transition-all hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"
               onClick={openLogin}
               type="button"
             >
@@ -374,14 +374,14 @@ export function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
           </PageContainer>
         </section>
 
-        <section className="border-y border-border-glass bg-surface-panel/30 py-7">
-          <PageContainer className="grid gap-5 text-center sm:grid-cols-3 sm:divide-x sm:divide-border-glass">
+        <section className="landing-metrics border-y py-7">
+          <PageContainer className="grid gap-5 text-center sm:grid-cols-3">
             {[
               ['URL · TEXT', '최소한의 입력'],
               ['1–5 QUIZZES', '콘텐츠 맞춤 문제'],
               ['3 TYPES', '객관식 · 주관식 · 코드'],
             ].map(([value, label]) => (
-              <div className="px-5" key={value}>
+              <div className="landing-metric px-5" key={value}>
                 <p className="font-mono text-label font-bold tracking-wider text-brand-400">{value}</p>
                 <p className="mt-1 text-caption text-text-muted">{label}</p>
               </div>
@@ -389,7 +389,7 @@ export function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
           </PageContainer>
         </section>
 
-        <section className="py-24 sm:py-32" id="why-readle">
+        <section className="landing-anchor-section py-24 sm:py-32" id="why-readle">
           <PageContainer>
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-label font-bold text-brand-400">WHY READLE</p>
@@ -402,26 +402,42 @@ export function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
               </p>
             </div>
 
-            <div className="mt-14 grid gap-5 md:grid-cols-3">
-              {[
-                ['SAVE', '저장한 글을 다시 열지 않습니다.', '북마크의 안도감은 지식으로 남지 않습니다.'],
-                ['PROMPT', '매번 AI 프롬프트를 작성합니다.', '일회성 대화는 학습 기록으로 이어지지 않습니다.'],
-                ['RECALL', '이해했는지 확인하기 어렵습니다.', '읽기만으로는 부족한 개념을 발견하기 어렵습니다.'],
-              ].map(([label, title, description]) => (
-                <article
-                  className="rounded-card border border-border-glass bg-surface-glass p-6 backdrop-blur-md transition-transform duration-300 hover:-translate-y-1 hover:border-border-glass-hover"
-                  key={label}
-                >
-                  <span className="font-mono text-caption font-bold text-brand-400">{label}</span>
-                  <h3 className="mt-5 text-section font-bold">{title}</h3>
-                  <p className="mt-3 text-label leading-6 text-text-muted">{description}</p>
-                </article>
-              ))}
+            <div className="landing-problem-panel mt-14">
+              <div className="landing-problem-statement">
+                <span className="font-mono text-caption font-bold tracking-wider text-brand-400">
+                  THE GAP
+                </span>
+                <p className="mt-6 text-3xl font-bold leading-tight tracking-tight sm:text-[2.5rem]">
+                  읽는 데서 멈추면,
+                  <br />
+                  이해는 확인되지 않습니다.
+                </p>
+                <p className="mt-6 max-w-lg text-label leading-7 text-text-secondary">
+                  Readle은 기술 글을 저장하는 대신 문제로 바꾸고, 내가 설명하지 못한 지점을
+                  학습 기록으로 남깁니다.
+                </p>
+              </div>
+              <div className="landing-problem-list">
+                {[
+                  ['01', '저장', '북마크는 늘어나지만 다시 열어보지 않습니다.'],
+                  ['02', '대화', '일회성 AI 대화는 다음 학습으로 이어지지 않습니다.'],
+                  ['03', '회상', '읽기만으로는 놓친 개념을 발견하기 어렵습니다.'],
+                ].map(([number, title, description]) => (
+                  <article className="landing-problem-row" key={number}>
+                    <span>{number}</span>
+                    <div>
+                      <h3>{title}</h3>
+                      <p>{description}</p>
+                    </div>
+                    <span aria-hidden="true">↗</span>
+                  </article>
+                ))}
+              </div>
             </div>
           </PageContainer>
         </section>
 
-        <section className="border-y border-border-glass bg-surface-panel/25 py-24 sm:py-32" id="how-it-works">
+        <section className="landing-anchor-section landing-workflow border-y py-24 sm:py-32" id="how-it-works">
           <PageContainer>
             <div className="max-w-2xl">
               <p className="text-label font-bold text-brand-400">HOW IT WORKS</p>
@@ -433,24 +449,31 @@ export function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
               </p>
             </div>
 
-            <ol className="mt-14 grid gap-5 lg:grid-cols-3">
+            <ol className="landing-timeline mt-16 grid gap-10 lg:grid-cols-3 lg:gap-0">
               {steps.map((step) => (
                 <li
-                  className="group relative overflow-hidden rounded-card border border-border-default bg-surface-canvas/60 p-7 transition-colors hover:border-brand-400/35"
+                  className="landing-timeline-step group relative"
                   key={step.number}
                 >
-                  <span className="font-mono text-5xl font-bold text-brand-500/18 transition-colors group-hover:text-brand-500/30">
-                    {step.number}
-                  </span>
-                  <h3 className="mt-7 text-section font-bold">{step.title}</h3>
-                  <p className="mt-3 text-label leading-6 text-text-secondary">{step.description}</p>
+                  <div className="landing-timeline-marker">
+                    <span>{step.number}</span>
+                  </div>
+                  <div className="landing-timeline-copy">
+                    <p className="font-mono text-[0.625rem] font-bold tracking-[0.16em] text-brand-400">
+                      STEP {step.number}
+                    </p>
+                    <h3 className="mt-3 text-section font-bold">{step.title}</h3>
+                    <p className="mt-3 text-label leading-6 text-text-secondary">
+                      {step.description}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ol>
           </PageContainer>
         </section>
 
-        <section className="py-24 sm:py-32" id="features">
+        <section className="landing-anchor-section py-24 sm:py-32" id="features">
           <PageContainer>
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-label font-bold text-brand-400">BUILT FOR ACTIVE LEARNING</p>
@@ -463,19 +486,27 @@ export function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
               </p>
             </div>
 
-            <div className="mt-14 grid gap-5 md:grid-cols-2">
+            <div className="landing-feature-bento mt-14">
               {features.map((feature) => (
                 <article
-                  className="rounded-card border border-border-glass bg-linear-to-br from-surface-elevated/70 to-surface-panel/30 p-7 transition-all duration-300 hover:border-brand-400/30 hover:shadow-card"
+                  className={`landing-feature-card landing-feature-${feature.code} rounded-card border p-7 transition-all duration-300`}
                   key={feature.code}
                 >
-                  <span className="grid size-10 place-items-center rounded-control border border-brand-400/20 bg-brand-500/10 font-mono text-caption font-bold text-brand-400">
-                    {feature.code}
-                  </span>
-                  <h3 className="mt-6 text-section font-bold">{feature.title}</h3>
-                  <p className="mt-3 max-w-xl text-label leading-6 text-text-secondary">
-                    {feature.description}
-                  </p>
+                  <div className="landing-feature-heading">
+                    <span>{feature.code}</span>
+                    <p>READLE CORE</p>
+                  </div>
+                  <div className="landing-feature-copy">
+                    <h3 className="text-section font-bold">{feature.title}</h3>
+                    <p className="mt-3 max-w-xl text-label leading-6 text-text-secondary">
+                      {feature.description}
+                    </p>
+                  </div>
+                  <div aria-hidden="true" className="landing-feature-visual">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
                 </article>
               ))}
             </div>
@@ -484,7 +515,7 @@ export function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
 
         <section className="pb-24 sm:pb-32">
           <PageContainer>
-            <div className="relative overflow-hidden rounded-[2rem] border border-brand-400/25 bg-linear-to-br from-brand-500/18 via-surface-panel to-[#5B4BDB]/12 px-6 py-14 text-center shadow-[0_2rem_8rem_rgb(31_65_154/0.18)] sm:px-12 sm:py-20">
+            <div className="landing-final-cta relative overflow-hidden rounded-[2rem] border px-6 py-14 text-center sm:px-12 sm:py-20">
               <div className="absolute left-1/2 top-0 -z-10 size-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-400/20 blur-3xl" />
               <p className="text-label font-bold text-brand-400">READ · SOLVE · UNDERSTAND</p>
               <h2 className="mx-auto mt-5 max-w-3xl text-title font-bold tracking-tight sm:text-4xl">
