@@ -36,5 +36,9 @@ describe('AppHeader', () => {
 
     expect(html).toContain('aria-label="테스트 사용자 프로필"')
     expect(html).toContain('>로그아웃</button>')
+    expect(html).not.toContain('aria-label="새 퀴즈 만들기"')
+    expect(html.indexOf('aria-label="테스트 사용자 프로필"')).toBeLessThan(
+      html.indexOf('>로그아웃</button>'),
+    )
   })
 })

@@ -63,35 +63,25 @@ export function AppHeader({ showNavigation = true }: AppHeaderProps) {
           </div>
         )}
         {showNavigation && (
-          <div className="flex items-center gap-2">
-            {member && (
-              <button
-                aria-describedby={logoutError ? 'logout-error' : undefined}
-                aria-busy={isLoggingOut}
-                className="min-h-9 rounded-control px-2 text-caption font-semibold text-text-secondary transition-colors hover:bg-surface-elevated hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isLoggingOut}
-                onClick={() => void handleLogout()}
-                type="button"
-              >
-                {isLoggingOut ? '로그아웃 중' : '로그아웃'}
-              </button>
-            )}
-            <Link
-              aria-label="새 퀴즈 만들기"
-              className="flex min-h-9 items-center gap-1.5 rounded-control bg-brand-500 px-3 text-label font-semibold text-text-on-brand shadow-button transition-colors hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"
-              to={ROUTES.home}
-            >
-              <span aria-hidden="true" className="text-section leading-none">
-                +
-              </span>
-              <span className="hidden md:inline">새 퀴즈</span>
-            </Link>
+          <div className="relative flex items-center gap-1 sm:gap-2">
             {member ? (
-              <ProfileAvatar
-                imageUrl={member.profileImageUrl}
-                label={profileLabel}
-                nickname={member.nickname}
-              />
+              <>
+                <ProfileAvatar
+                  imageUrl={member.profileImageUrl}
+                  label={profileLabel}
+                  nickname={member.nickname}
+                />
+                <button
+                  aria-describedby={logoutError ? 'logout-error' : undefined}
+                  aria-busy={isLoggingOut}
+                  className="min-h-9 rounded-control px-2 text-caption font-semibold text-text-secondary transition-colors hover:bg-surface-elevated hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isLoggingOut}
+                  onClick={() => void handleLogout()}
+                  type="button"
+                >
+                  {isLoggingOut ? '로그아웃 중' : '로그아웃'}
+                </button>
+              </>
             ) : (
               <Link
                 className="flex min-h-9 items-center rounded-control px-2 text-caption font-semibold text-text-secondary transition-colors hover:bg-surface-elevated hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"
@@ -101,7 +91,11 @@ export function AppHeader({ showNavigation = true }: AppHeaderProps) {
               </Link>
             )}
             {logoutError && (
-              <p className="text-caption text-status-error" id="logout-error" role="alert">
+              <p
+                className="absolute right-0 top-full mt-2 w-max max-w-[min(18rem,80vw)] rounded-control border border-status-error/30 bg-surface-panel px-3 py-2 text-caption text-status-error shadow-card"
+                id="logout-error"
+                role="alert"
+              >
                 {logoutError}
               </p>
             )}

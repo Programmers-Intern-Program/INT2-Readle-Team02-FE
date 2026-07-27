@@ -82,6 +82,7 @@ export function useContentForm() {
   const [textValues, setTextValues] = useState<ContentInputValues>(initialState.textValues)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [isExtracted, setIsExtracted] = useState(initialState.isExtracted)
+  const [rejectionMessage, setRejectionMessage] = useState<string | null>(null)
   const modeRef = useRef<InputMode>(mode)
 
   const submitGenerationRef = useRef(0)
@@ -115,6 +116,7 @@ export function useContentForm() {
     setTouched({})
     createContent.reset()
     extractContent.reset()
+    setRejectionMessage(null)
   }
 
   function resetExtractState() {
@@ -127,9 +129,11 @@ export function useContentForm() {
     setIsExtracted(false)
     extractContent.reset()
     createContent.reset()
+    setRejectionMessage(null)
   }
 
   function updateValue(field: keyof ContentInputValues, value: string) {
+    setRejectionMessage(null)
     if (mode === 'URL') {
       if (field === 'url') {
         extractContent.reset()
@@ -155,6 +159,7 @@ export function useContentForm() {
     )
 
     createContent.reset()
+    setRejectionMessage(null)
 
     if (!isValid) {
       return
@@ -206,7 +211,7 @@ export function useContentForm() {
           if (response.validationStatus === 'PENDING') {
             void navigate(generatePath(ROUTES.learningPreparation, { contentId: String(response.contentId) }))
           } else {
-            window.alert('입력하신 콘텐츠가 유효하지 않아 거부되었습니다. 내용을 다시 확인해 주세요.')
+            setRejectionMessage('입력한 콘텐츠를 학습 자료로 사용할 수 없습니다. 내용을 확인하고 수정해 주세요.')
           }
         },
       }
@@ -224,6 +229,7 @@ export function useContentForm() {
     isCreatePending: createContent.isPending,
     extractErrorMsg,
     createErrorMsg,
+    rejectionMessage,
     changeMode,
     resetExtractState,
     updateValue,
