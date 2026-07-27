@@ -66,6 +66,9 @@ const ALLOWED_USER_FACING_ERROR_CODES = new Set([
   'VALIDATION_ALREADY_RUNNING',
   'NOT_RETRYABLE',
   'QUIZ_GENERATION_FAILED',
+  'EMPTY_CONTENT',
+  'CONTENT_TOO_SHORT',
+  'LOW_CONFIDENCE',
   'AI_SERVICE_ERROR',
 
   // 퀴즈 풀기 및 제출 비즈니스 에러 코드
@@ -81,28 +84,29 @@ const ALLOWED_USER_FACING_ERROR_CODES = new Set([
 ])
 
 /**
- * 백엔드 에러 계약(Contract) 기반 정적 화이트리스트 검증 함수.
- * 허용된 비즈니스 에러 코드(code)에 해당하는 경우에만 error.message를 노출하고,
- * 그 외의 시스템/내부 예외, 미정의 에러 코드는 모두 안전한 Fallback 메시지로 전환합니다.
+ * 백엔드 에러 계약(Contract) 기반 2중 가드레일 검증 함수.
+ * 1차: 허용된 비즈니스 에러 코드(code) 화이트리스트 검증
+ * 2차: 개발자용 기술 아티팩트(JSON, 스택트레이스, 영문 변수명 등) 혼입 검증
+ * 1차와 2차 검증을 모두 통과한 안전한 메시지만 노출하고, 그 외는 모두 안전한 Fallback 메시지로 전환합니다.
  */
 export function sanitizeErrorMessage(message?: string | null, code?: string | null): string | null {
   if (!message) return null
   const trimmed = message.trim()
   if (!trimmed) return null
 
-  // code가 주어졌고, 명시된 사용자 안내용 비즈니스 에러 코드 화이트리스트에 포함된 경우에만 허용
-  if (code && ALLOWED_USER_FACING_ERROR_CODES.has(code)) {
-    return trimmed
+  // 1차 검증: code가 존재하는 경우, 반드시 사용자 안내용 비즈니스 에러 코드 화이트리스트에 포함되어야 함
+  if (code && !ALLOWED_USER_FACING_ERROR_CODES.has(code)) {
+    return null
   }
 
-  // code가 없거나 비어있는 경우, 기술적 아티팩트(스택트레이스, JSON, 영문 변수명 등)가 없는 일반 유저 문구만 한정 허용
-  if (!code) {
-    const hasTechnicalArtifacts = /[{}<>[\]\\/]|Exception|NullPointer|SQL|database|Jackson|validationScore/i.test(trimmed)
-    if (!hasTechnicalArtifacts) {
-      return trimmed
-    }
+  // 2차 검증: 메시지 자체에 내부 디버깅/기술 아티팩트(JSON, 스택트레이스, 영문 변수명 등)가 섞여있는지 검증
+  const hasTechnicalArtifacts =
+    /[{}<>\\]|Exception|NullPointer|SQL|database|Jackson|validationScore|status는|status가|PASSED|REJECTED/i.test(
+      trimmed,
+    )
+  if (hasTechnicalArtifacts) {
+    return null
   }
 
-  // 시스템 에러 코드이거나 안전하지 않은 내부 문구인 경우 null 반환 (Fallback 안내로 전환)
-  return null
+  return trimmed
 }
