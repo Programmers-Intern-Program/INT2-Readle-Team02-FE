@@ -103,6 +103,31 @@ function QuizErrorScreen({ message, onRetry }: QuizErrorScreenProps) {
 
 // ─── QuizPage ────────────────────────────────────────────────────────────────
 
+function isValidQuizAnswers(data: unknown): data is QuizAnswers {
+  if (!data || typeof data !== 'object') return false
+  const obj = data as Record<string, unknown>
+  return Object.values(obj).every((val) => typeof val === 'number' || typeof val === 'string')
+}
+
+const getInitialAnswers = (currentQuizId: number): QuizAnswers => {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      const stored = sessionStorage.getItem(`quiz_answers_${currentQuizId}`)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (isValidQuizAnswers(parsed)) {
+          return parsed
+        } else {
+          sessionStorage.removeItem(`quiz_answers_${currentQuizId}`)
+        }
+      }
+    }
+  } catch (e) {
+    console.error('임시 저장된 답안 데이터를 불러오는데 실패했습니다:', e)
+  }
+  return {}
+}
+
 type LoadPhase =
   | { status: 'loading' }
   | { status: 'ready'; attemptId: number; detail: QuizDetailResponse }
@@ -115,7 +140,7 @@ export function QuizPage() {
   const quizId = Number(quizIdParam)
 
   const [phase, setPhase] = useState<LoadPhase>({ status: 'loading' })
-  const [answers, setAnswers] = useState<QuizAnswers>({})
+  const [answers, setAnswers] = useState<QuizAnswers>(() => getInitialAnswers(quizId))
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [notice, setNotice] = useState<string>()
@@ -130,7 +155,7 @@ export function QuizPage() {
   const [prevQuizId, setPrevQuizId] = useState(quizId)
   if (Number.isFinite(quizId) && quizId > 0 && quizId !== prevQuizId) {
     setPrevQuizId(quizId)
-    setAnswers({})
+    setAnswers(getInitialAnswers(quizId))
     setCurrentIndex(0)
     setShowConfirmation(false)
     setNotice(undefined)
@@ -138,6 +163,23 @@ export function QuizPage() {
   }
 
   const handleRetryLoad = () => setRetryCount((c) => c + 1)
+
+  // 답안 임시 저장 (Debounce 적용)
+  useEffect(() => {
+    if (!Number.isFinite(quizId) || quizId <= 0) return
+
+    const timer = setTimeout(() => {
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem(`quiz_answers_${quizId}`, JSON.stringify(answers))
+        }
+      } catch (e) {
+        console.error('임시 저장된 답안 데이터를 저장하는데 실패했습니다:', e)
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [quizId, answers])
 
   useEffect(() => {
     let cancelled = false
@@ -286,6 +328,7 @@ export function QuizPage() {
     try {
       if (typeof window !== 'undefined' && window.sessionStorage) {
         window.sessionStorage.setItem(`quiz_submit_${attemptId}`, JSON.stringify(submitRequest))
+        window.sessionStorage.removeItem(`quiz_answers_${quizId}`)
       }
     } catch {
       // Storage is full or browser privacy mode blocks access

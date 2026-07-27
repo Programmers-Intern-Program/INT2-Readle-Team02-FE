@@ -30,6 +30,7 @@ describe('QuizPage', () => {
   afterEach(() => {
     vi.clearAllMocks()
     cleanup()
+    sessionStorage.clear()
   })
 
   it('API 로딩 중에는 스켈레톤 로딩 화면을 렌더링한다', () => {
