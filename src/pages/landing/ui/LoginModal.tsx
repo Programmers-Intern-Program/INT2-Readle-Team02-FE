@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
-import readleSymbolUrl from '@/shared/assets/readle-symbol.png'
-import readleWordmarkUrl from '@/shared/assets/readle-wordmark.png'
 import { SocialLoginButton } from '@/pages/login/ui/SocialLoginButton'
+import readleSymbolUrl from '@/shared/assets/readle-symbol.png'
 import { ROUTES } from '@/shared/config/routes'
 import { sanitizeReturnTo } from '@/pages/landing/model/sanitizeReturnTo'
+import '@/pages/landing/ui/LoginModal.css'
 
 interface LoginModalProps {
   authError: string | null
@@ -87,7 +87,7 @@ export function LoginModal({ authError, onClose, open }: LoginModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-100 grid place-items-center overflow-y-auto bg-surface-canvas/80 px-4 py-8 backdrop-blur-md"
+      className="login-modal-backdrop fixed inset-0 z-100 grid place-items-center overflow-y-auto px-4 py-8 backdrop-blur-md"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose()
@@ -98,7 +98,7 @@ export function LoginModal({ authError, onClose, open }: LoginModalProps) {
         aria-describedby="login-description"
         aria-labelledby="login-title"
         aria-modal="true"
-        className="relative w-full max-w-sm rounded-[1.5rem] border border-border-glass bg-surface-panel p-6 shadow-[0_2rem_8rem_rgb(0_0_0/0.55)] sm:p-8"
+        className="login-modal-card relative w-full max-w-sm overflow-hidden rounded-[1.5rem] border p-6 sm:p-8"
         ref={dialogRef}
         role="dialog"
       >
@@ -113,17 +113,26 @@ export function LoginModal({ authError, onClose, open }: LoginModalProps) {
         </button>
 
         <div className="mb-7 text-center">
-          <div aria-hidden="true" className="flex items-center justify-center gap-2.5">
-            <img alt="" className="size-11 rounded-md" src={readleSymbolUrl} />
-            <img alt="" className="h-9 w-auto" src={readleWordmarkUrl} />
+          <div aria-hidden="true" className="login-modal-brand">
+            <img alt="" className="login-modal-brand-symbol" src={readleSymbolUrl} />
+            <span className="login-modal-brand-name">
+              Read<span>le</span>
+            </span>
           </div>
-          <h2 className="mt-6 text-heading font-bold tracking-tight" id="login-title">
-            다시 만나 반갑습니다
+          <h2 className="mt-6 text-heading font-bold tracking-tight text-text-primary" id="login-title">
+            Readle에서 학습을 시작하세요
           </h2>
           <p className="mt-2 text-label text-text-secondary" id="login-description">
-            소셜 계정으로 간편하게 학습을 시작하세요.
+            읽어둔 기술 글을 이해한 지식으로 바꿔보세요.
           </p>
         </div>
+
+        {authErrorMessage && (
+          <p className="login-modal-error mb-4 text-caption" role="alert">
+            <span aria-hidden="true">!</span>
+            {authErrorMessage}
+          </p>
+        )}
 
         <div className="grid gap-3">
           <SocialLoginButton
@@ -136,14 +145,9 @@ export function LoginModal({ authError, onClose, open }: LoginModalProps) {
           />
         </div>
 
-        {authErrorMessage && (
-          <p className="mt-4 text-center text-caption text-status-error" role="alert">
-            {authErrorMessage}
-          </p>
-        )}
-
-        <p className="mt-2 text-center text-label leading-relaxed text-text-muted">
-          계속하면 Readle의 이용약관 및 개인정보 처리방침에 동의한 것으로 간주합니다.
+        <p className="login-modal-assurance mt-5 flex items-center justify-center gap-2 text-center text-caption text-text-muted">
+          <span aria-hidden="true">✓</span>
+          소셜 로그인으로 안전하게 시작할 수 있어요.
         </p>
       </section>
     </div>
