@@ -117,7 +117,10 @@ export function HomePage() {
               <div aria-labelledby="url-input-tab" id="url-input-panel" role="tabpanel">
                 {isExtracted && (
                   values.content.trim().length >= 300 && values.content.trim().length <= 15000 ? (
-                    <p className="mb-4 rounded-md border border-status-success/30 bg-status-success/10 px-4 py-3 text-sm font-medium text-status-success">
+                    <p
+                      className="mb-4 rounded-md border border-status-success/30 bg-status-success/10 px-4 py-3 text-sm font-medium text-status-success"
+                      role="status"
+                    >
                       ✅ 첨부한 URL의 제목과 본문을 성공적으로 불러왔습니다!
                     </p>
                   ) : values.content.trim().length < 300 ? (

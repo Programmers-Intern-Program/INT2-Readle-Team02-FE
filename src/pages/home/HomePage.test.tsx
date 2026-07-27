@@ -83,8 +83,9 @@ describe('HomePage', () => {
       await user.click(submitButton)
 
       // 추출 성공 후 같은 탭(url)을 유지하면서 성공 메시지와 폼 렌더링 확인
-      const successMessage = await screen.findByText(/성공적으로 불러왔습니다/)
+      const successMessage = await screen.findByRole('status')
       expect(successMessage).toBeInTheDocument()
+      expect(successMessage).toHaveTextContent('성공적으로 불러왔습니다')
 
       const urlTab = screen.getByRole('tab', { name: /URL 가져오기/ })
       expect(urlTab).toHaveAttribute('aria-selected', 'true')
