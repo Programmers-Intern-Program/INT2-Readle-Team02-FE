@@ -54,7 +54,11 @@ function ErrorFeedbackPanel({
   }
 }) {
   return (
-    <div className="flex h-[17.5rem] flex-col items-center justify-center rounded-xl bg-surface-panel p-6 text-center shadow-[inset_0_0_0_1px_var(--color-border-default)]">
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="flex h-[17.5rem] flex-col items-center justify-center rounded-xl bg-surface-panel p-6 text-center shadow-[inset_0_0_0_1px_var(--color-border-default)]"
+    >
       <span className="text-4xl text-status-error" aria-hidden="true">⚠</span>
       <p className="mt-4 text-label font-medium text-text-primary">{message}</p>
       {primaryAction && (

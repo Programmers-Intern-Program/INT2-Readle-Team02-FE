@@ -167,8 +167,6 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
             navigate(ROUTES.home, { replace: true })
             return
           }
-        } else if (error instanceof Error) {
-          setErrorMessage(error.message)
         }
         
         setStatus('error')

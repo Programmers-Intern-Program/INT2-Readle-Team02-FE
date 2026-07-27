@@ -94,8 +94,8 @@ export function sanitizeErrorMessage(message?: string | null, code?: string | nu
   const trimmed = message.trim()
   if (!trimmed) return null
 
-  // 1차 검증: code가 존재하는 경우, 반드시 사용자 안내용 비즈니스 에러 코드 화이트리스트에 포함되어야 함
-  if (code && !ALLOWED_USER_FACING_ERROR_CODES.has(code)) {
+  // 1차 검증: code가 없거나 명시된 사용자 안내용 비즈니스 에러 코드 화이트리스트에 포함되지 않은 경우 즉시 null 반환 (Fallback 사용)
+  if (!code || !ALLOWED_USER_FACING_ERROR_CODES.has(code)) {
     return null
   }
 
