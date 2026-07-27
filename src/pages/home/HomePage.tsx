@@ -34,6 +34,8 @@ export function HomePage() {
     }
   }, [values.content, mode, isExtracted])
 
+  const trimmedContentLength = values.content.trim().length
+
   const renderContentInputs = () => (
     <>
       <label className="sr-only" htmlFor="learning-title">콘텐츠 제목</label>
@@ -117,7 +119,7 @@ export function HomePage() {
             {mode === 'URL' ? (
               <div aria-labelledby="url-input-tab" id="url-input-panel" role="tabpanel">
                 {isExtracted && (
-                  values.content.trim().length >= 300 && values.content.trim().length <= 15000 ? (
+                  trimmedContentLength >= 300 && trimmedContentLength <= 15000 ? (
                     <p
                       className="learn-status-message learn-status-success"
                       role="status"
@@ -125,7 +127,7 @@ export function HomePage() {
                       <span aria-hidden="true">✓</span>
                       <span>첨부한 URL의 제목과 본문을 성공적으로 불러왔습니다.</span>
                     </p>
-                  ) : values.content.trim().length < 300 ? (
+                  ) : trimmedContentLength < 300 ? (
                     <p
                       className="learn-status-message learn-status-error"
                       role="alert"
@@ -198,10 +200,10 @@ export function HomePage() {
                   {mode === 'TEXT' || isExtracted ? (
                     <>
                       <span className={`font-mono ${errors.content && touched.content ? 'text-status-error' : ''}`} id="content-character-count">
-                        {values.content.length.toLocaleString('ko-KR')}자
+                        {trimmedContentLength.toLocaleString('ko-KR')}자
                       </span> 입력됨
-                      {values.content.length < 300 && ' (최소 300자 이상)'}
-                      {values.content.length > 15000 && ' (최대 글자 수 초과)'}
+                      {trimmedContentLength < 300 && ' (최소 300자 이상)'}
+                      {trimmedContentLength > 15000 && ' (최대 글자 수 초과)'}
                     </>
                   ) : (
                     '공개된 기술 문서와 블로그 URL을 사용할 수 있습니다.'

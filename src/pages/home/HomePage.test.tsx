@@ -277,6 +277,28 @@ describe('HomePage', () => {
       expect(preparationPage).toBeInTheDocument()
     })
 
+    it('본문 글자 수와 활성화 조건은 앞뒤 공백을 제외한 길이를 사용한다', async () => {
+      const user = userEvent.setup()
+      const queryClient = createTestQueryClient()
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <HomePage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      )
+
+      await user.click(screen.getByRole('tab', { name: /텍스트 직접 입력/ }))
+      const contentTextarea = screen.getByLabelText('학습할 본문')
+      contentTextarea.focus()
+      await user.paste(`  ${'a'.repeat(299)}  `)
+
+      expect(screen.getByText('299자')).toBeInTheDocument()
+      expect(screen.getByText(/최소 300자 이상/)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /분석하고 퀴즈 만들기/ })).toBeDisabled()
+    })
+
     it('콘텐츠 검증이 즉시 거절되면 폼 안에서 수정 가능한 오류를 안내한다', async () => {
       vi.mocked(contentApi.createContent).mockResolvedValueOnce({
         contentId: 101,
