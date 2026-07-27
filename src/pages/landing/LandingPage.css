@@ -66,6 +66,13 @@
   color: rgb(248 250 252);
 }
 
+.landing-nav-link:focus-visible {
+  border-radius: 0.25rem;
+  color: rgb(248 250 252);
+  outline: 2px solid rgb(107 150 255);
+  outline-offset: 4px;
+}
+
 .landing-nav-link:hover::after,
 .landing-nav-link:focus-visible::after {
   right: 0;
