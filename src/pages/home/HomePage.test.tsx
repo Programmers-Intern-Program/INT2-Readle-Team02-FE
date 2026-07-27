@@ -276,6 +276,35 @@ describe('HomePage', () => {
       const preparationPage = await screen.findByTestId('preparation-page')
       expect(preparationPage).toBeInTheDocument()
     })
+
+    it('콘텐츠 검증이 즉시 거절되면 폼 안에서 수정 가능한 오류를 안내한다', async () => {
+      vi.mocked(contentApi.createContent).mockResolvedValueOnce({
+        contentId: 101,
+        validationStatus: 'REJECTED',
+      })
+      const user = userEvent.setup()
+      const queryClient = createTestQueryClient()
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <HomePage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      )
+
+      await user.click(screen.getByRole('tab', { name: /텍스트 직접 입력/ }))
+      await user.type(screen.getByLabelText('콘텐츠 제목'), '검증할 콘텐츠')
+      const contentTextarea = screen.getByLabelText('학습할 본문')
+      contentTextarea.focus()
+      await user.paste('a'.repeat(300))
+      await user.click(screen.getByRole('button', { name: /분석하고 퀴즈 만들기/ }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        '입력한 콘텐츠를 학습 자료로 사용할 수 없습니다. 내용을 확인하고 수정해 주세요.',
+      )
+      expect(contentTextarea).toHaveValue('a'.repeat(300))
+    })
   })
 
   describe('경쟁 조건(Race Condition) 방어 테스트', () => {

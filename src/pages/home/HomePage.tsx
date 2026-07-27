@@ -15,6 +15,7 @@ export function HomePage() {
     isCreatePending,
     extractErrorMsg,
     createErrorMsg,
+    rejectionMessage,
     changeMode,
     resetExtractState,
     updateValue,
@@ -118,30 +119,35 @@ export function HomePage() {
                 {isExtracted && (
                   values.content.trim().length >= 300 && values.content.trim().length <= 15000 ? (
                     <p
-                      className="mb-4 rounded-md border border-status-success/30 bg-status-success/10 px-4 py-3 text-sm font-medium text-status-success"
+                      className="learn-status-message learn-status-success"
                       role="status"
                     >
-                      ✅ 첨부한 URL의 제목과 본문을 성공적으로 불러왔습니다!
+                      <span aria-hidden="true">✓</span>
+                      <span>첨부한 URL의 제목과 본문을 성공적으로 불러왔습니다.</span>
                     </p>
                   ) : values.content.trim().length < 300 ? (
                     <p
-                      className="mb-4 rounded-md border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm font-medium text-status-error"
+                      className="learn-status-message learn-status-error"
                       role="alert"
                     >
-                      ⚠️ 본문을 충분히 불러오지 못했습니다. 아래 본문을 300자 이상으로 직접 보완하거나 텍스트 직접
-                      입력을 이용해 주세요.
+                      <span aria-hidden="true">!</span>
+                      <span>
+                        본문을 충분히 불러오지 못했습니다. 아래 본문을 300자 이상으로 직접 보완하거나 텍스트 직접
+                        입력을 이용해 주세요.
+                      </span>
                     </p>
                   ) : (
                     <p
-                      className="mb-4 rounded-md border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm font-medium text-status-error"
+                      className="learn-status-message learn-status-error"
                       role="alert"
                     >
-                      ⚠️ 불러온 본문이 15,000자를 초과했습니다. 아래 본문을 최대 글자 수에 맞게 줄여 주세요.
+                      <span aria-hidden="true">!</span>
+                      <span>불러온 본문이 15,000자를 초과했습니다. 아래 본문을 최대 글자 수에 맞게 줄여 주세요.</span>
                     </p>
                   )
                 )}
                 
-                <div className="flex items-center gap-2">
+                <div className="learn-url-row">
                   <div className="flex-1">
                     <label className="sr-only" htmlFor="learning-url">기술 아티클 URL</label>
                     <input
@@ -153,7 +159,7 @@ export function HomePage() {
                       id="learning-url"
                       onBlur={() => handleBlur('url')}
                       onChange={(event) => updateValue('url', event.target.value)}
-                      placeholder="학습할 기술 아티클 URL을 붙여넣어 주세요"
+                      placeholder="예: https://tech.kakao.com/..."
                       type="url"
                       value={values.url}
                     />
@@ -186,7 +192,7 @@ export function HomePage() {
               </div>
             )}
 
-            <div className="mt-4 flex flex-col gap-3 border-t border-border-glass pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-3 flex flex-col gap-3 border-t border-border-glass pt-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-1">
                 <p className="text-[0.6875rem] leading-5 text-text-muted">
                   {mode === 'TEXT' || isExtracted ? (
@@ -201,8 +207,11 @@ export function HomePage() {
                     '공개된 기술 문서와 블로그 URL을 사용할 수 있습니다.'
                   )}
                 </p>
-                {createErrorMsg && (
-                  <p className="text-[0.6875rem] leading-5 text-status-error">{createErrorMsg}</p>
+                {(createErrorMsg || rejectionMessage) && (
+                  <p className="learn-inline-error" role="alert">
+                    <span aria-hidden="true">!</span>
+                    <span>{createErrorMsg || rejectionMessage}</span>
+                  </p>
                 )}
               </div>
               <Button 
