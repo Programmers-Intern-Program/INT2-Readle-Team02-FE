@@ -87,14 +87,18 @@ export function useContentForm() {
   const submitGenerationRef = useRef(0)
 
   useEffect(() => {
-    try {
-      if (typeof sessionStorage !== 'undefined') {
-        const stateToStore: StoredFormState = { mode, urlValues, textValues, isExtracted }
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stateToStore))
+    const timer = setTimeout(() => {
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          const stateToStore: StoredFormState = { mode, urlValues, textValues, isExtracted }
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stateToStore))
+        }
+      } catch (e) {
+        console.error('입력 데이터를 임시 저장하는데 실패했습니다:', e)
       }
-    } catch (e) {
-      console.error('입력 데이터를 임시 저장하는데 실패했습니다:', e)
-    }
+    }, 400)
+
+    return () => clearTimeout(timer)
   }, [mode, urlValues, textValues, isExtracted])
 
   const values = mode === 'URL' ? urlValues : textValues

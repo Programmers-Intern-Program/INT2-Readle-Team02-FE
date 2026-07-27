@@ -137,6 +137,11 @@ export function LearningPreparationPage() {
     if (createQuizMutation.isSuccess && createQuizMutation.data && !isRoutingRef.current) {
       isRoutingRef.current = true
       const quizId = createQuizMutation.data.quizId
+
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('learningContentFormState')
+      }
+
       const timer = window.setTimeout(() => {
         void navigate(generatePath(ROUTES.quiz, { quizId: String(quizId) }))
       }, 1000)
