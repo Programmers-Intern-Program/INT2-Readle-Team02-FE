@@ -4,7 +4,7 @@ import { ROUTES } from '@/shared/config/routes'
 import { Button } from '@/shared/ui'
 import { submitQuizAttempt, fetchQuizAttemptResult } from '@/pages/quiz/api/quiz'
 import type { QuizSubmitRequest } from '@/pages/quiz/api/types'
-import { ApiError } from '@/shared/api/error'
+import { ApiError, sanitizeErrorMessage } from '@/shared/api/error'
 import '@/pages/grading/GradingPage.css'
 
 type GradingStatus = 'running' | 'success' | 'error'
@@ -64,6 +64,7 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
   const [activeStage, setActiveStage] = useState(0)
   const [attemptNumber, setAttemptNumber] = useState(0)
   const [status, setStatus] = useState<GradingStatus>('running')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const [reportId, setReportId] = useState<number>()
   
@@ -136,6 +137,9 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
         if (!isMounted) return
         
         if (error instanceof ApiError) {
+          const safeMsg = sanitizeErrorMessage(error.message, error.code)
+          if (safeMsg) setErrorMessage(safeMsg)
+
           // 중복 제출 에러(이미 처리됨) 시 결과 다시 조회 시도
           if (submitRequest && (error.status === 409 || error.code === 'ATTEMPT_ALREADY_SUBMITTED')) {
             try {
@@ -145,8 +149,14 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
               setActiveStage(gradingSteps.length - 1)
               setStatus('success')
               return
-            } catch {
+            } catch (fallbackError: unknown) {
               if (!isMounted) return
+              const rawFallbackMsg = (fallbackError instanceof ApiError || fallbackError instanceof Error) ? fallbackError.message : null
+              const fallbackCode = fallbackError instanceof ApiError ? fallbackError.code : null
+              const safeFallbackMsg = sanitizeErrorMessage(rawFallbackMsg, fallbackCode)
+              if (safeFallbackMsg) {
+                setErrorMessage(safeFallbackMsg)
+              }
               setStatus('error')
               return
             }
@@ -242,7 +252,7 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
               {status === 'success'
                 ? '결과 리포트가 준비되었습니다.'
                 : status === 'error'
-                  ? '일시적인 오류로 채점을 완료하지 못했습니다.'
+                  ? (errorMessage || '네트워크 연결 또는 AI 채점 응답 지연으로 처리를 완료하지 못했습니다.')
                   : gradingSteps[activeStage].description}
             </p>
           </div>

@@ -14,6 +14,7 @@ import {
   type QuizQuestion,
 } from '@/pages/quiz/model/quiz'
 import { ROUTES } from '@/shared/config/routes'
+import { ApiError, sanitizeErrorMessage } from '@/shared/api/error'
 import '@/pages/quiz/QuizPage.css'
 
 import { QuizNavigator } from '@/pages/quiz/ui/QuizNavigator'
@@ -100,21 +101,6 @@ function QuizErrorScreen({ message, onRetry }: QuizErrorScreenProps) {
   )
 }
 
-// ─── 제출 에러 토스트 ─────────────────────────────────────────────────────────
-
-interface SubmitErrorToastProps {
-  onDismiss: () => void
-}
-
-function SubmitErrorToast({ onDismiss }: SubmitErrorToastProps) {
-  return (
-    <div className="quiz-submit-error" role="alert">
-      <p>제출 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.</p>
-      <button onClick={onDismiss} type="button" aria-label="오류 메시지 닫기">✕</button>
-    </div>
-  )
-}
-
 // ─── QuizPage ────────────────────────────────────────────────────────────────
 
 type LoadPhase =
@@ -133,7 +119,6 @@ export function QuizPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [notice, setNotice] = useState<string>()
-  const [showSubmitError, setShowSubmitError] = useState(false)
   // 재시도 트리거 — increment하면 effect가 재실행됨
   const [retryCount, setRetryCount] = useState(0)
 
@@ -149,9 +134,10 @@ export function QuizPage() {
     setCurrentIndex(0)
     setShowConfirmation(false)
     setNotice(undefined)
-    setShowSubmitError(false)
     setPhase({ status: 'loading' })
   }
+
+  const handleRetryLoad = () => setRetryCount((c) => c + 1)
 
   useEffect(() => {
     let cancelled = false
@@ -173,11 +159,14 @@ export function QuizPage() {
           if (cancelled) return
 
           attemptId = startResult.attemptId
-        } catch {
+        } catch (error: unknown) {
           if (!cancelled) {
+            const rawMsg = (error instanceof ApiError || error instanceof Error) ? error.message : null
+            const code = error instanceof ApiError ? error.code : null
+            const message = sanitizeErrorMessage(rawMsg, code) || '퀴즈를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.'
             setPhase({
               status: 'error',
-              message: '퀴즈를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+              message,
             })
           }
           return
@@ -189,13 +178,16 @@ export function QuizPage() {
         if (cancelled) return
 
         setPhase({ status: 'ready', attemptId, detail })
-      } catch {
+      } catch (error: unknown) {
         if (!cancelled) {
           // 다음 재시도 시 start를 건너뛰고 fetch부터 재개
           pendingAttemptRef.current = { quizId, attemptId }
+          const rawMsg = (error instanceof ApiError || error instanceof Error) ? error.message : null
+          const code = error instanceof ApiError ? error.code : null
+          const message = sanitizeErrorMessage(rawMsg, code) || '문제를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.'
           setPhase({
             status: 'error',
-            message: '문제를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.',
+            message,
           })
         }
       }
@@ -223,19 +215,12 @@ export function QuizPage() {
     )
   }
 
-  // ─── 로딩 / 에러 단계 ──────────────────────────────────────────────────────
+  // ─── 로딩 / 에러 상태 처리 ──────────────────────────────────────────────────
 
-  if (phase.status === 'loading') {
-    return <QuizLoadingScreen />
-  }
+  if (phase.status === 'loading') return <QuizLoadingScreen />
 
   if (phase.status === 'error') {
-    return (
-      <QuizErrorScreen
-        message={phase.message}
-        onRetry={() => setRetryCount((c) => c + 1)}
-      />
-    )
+    return <QuizErrorScreen message={phase.message} onRetry={handleRetryLoad} />
   }
 
   // ─── 퀴즈 풀이 단계 ────────────────────────────────────────────────────────
@@ -294,7 +279,6 @@ export function QuizPage() {
     if (phase.status === 'submitting') return
     setShowConfirmation(false)
     setPhase({ status: 'submitting', attemptId, detail })
-    setShowSubmitError(false)
 
     const submitRequest = formatAnswersForSubmit(detail.questions, answers)
     
@@ -374,10 +358,6 @@ export function QuizPage() {
         <div className="quiz-submit-overlay" role="status" aria-live="polite">
           <span className="sr-only">답안을 제출하고 있습니다…</span>
         </div>
-      )}
-
-      {showSubmitError && (
-        <SubmitErrorToast onDismiss={() => setShowSubmitError(false)} />
       )}
     </div>
   )
