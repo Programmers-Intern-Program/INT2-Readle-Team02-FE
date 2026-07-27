@@ -78,12 +78,12 @@ function ReportErrorState({ state, error }: { state: 'not-ready' | 'not-found' |
     'not-found': {
       code: error?.code || 'REPORT_NOT_FOUND',
       title: '결과 리포트를 찾을 수 없습니다',
-      description: error?.message || '삭제되었거나 존재하지 않는 학습 결과입니다.',
+      description: '삭제되었거나 존재하지 않는 학습 결과입니다.',
     },
     forbidden: {
       code: error?.code || 'FORBIDDEN',
       title: '결과 리포트에 접근할 수 없습니다',
-      description: error?.message || '본인의 학습 결과만 확인할 수 있습니다.',
+      description: '본인의 학습 결과만 확인할 수 있습니다.',
     },
     'unknown-error': {
       code: error?.code || 'UNKNOWN_ERROR',

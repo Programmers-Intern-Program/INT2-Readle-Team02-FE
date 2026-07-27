@@ -4,7 +4,7 @@ import { ROUTES } from '@/shared/config/routes'
 import { Button } from '@/shared/ui'
 import { submitQuizAttempt, fetchQuizAttemptResult } from '@/pages/quiz/api/quiz'
 import type { QuizSubmitRequest } from '@/pages/quiz/api/types'
-import { ApiError } from '@/shared/api/error'
+import { ApiError, sanitizeErrorMessage } from '@/shared/api/error'
 import '@/pages/grading/GradingPage.css'
 
 type GradingStatus = 'running' | 'success' | 'error'
@@ -137,7 +137,9 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
         if (!isMounted) return
         
         if (error instanceof ApiError) {
-          setErrorMessage(error.message)
+          const safeMsg = sanitizeErrorMessage(error.message)
+          if (safeMsg) setErrorMessage(safeMsg)
+
           // 중복 제출 에러(이미 처리됨) 시 결과 다시 조회 시도
           if (submitRequest && (error.status === 409 || error.code === 'ATTEMPT_ALREADY_SUBMITTED')) {
             try {
@@ -149,10 +151,10 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
               return
             } catch (fallbackError: unknown) {
               if (!isMounted) return
-              if (fallbackError instanceof ApiError && fallbackError.message.trim()) {
-                setErrorMessage(fallbackError.message)
-              } else if (fallbackError instanceof Error && fallbackError.message.trim()) {
-                setErrorMessage(fallbackError.message)
+              const rawFallbackMsg = (fallbackError instanceof ApiError || fallbackError instanceof Error) ? fallbackError.message : null
+              const safeFallbackMsg = sanitizeErrorMessage(rawFallbackMsg)
+              if (safeFallbackMsg) {
+                setErrorMessage(safeFallbackMsg)
               }
               setStatus('error')
               return

@@ -149,6 +149,24 @@ describe('LearningPreparationPage', () => {
     expect(screen.getByText('AI 검증 서비스 연동 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.')).toBeInTheDocument()
   })
 
+  it('콘텐츠 검증 폴링 네트워크 실패(isValidationError) 시 폴링 에러 메시지를 렌더링한다', () => {
+    vi.mocked(useValidationPolling).mockReturnValue(
+      mockValidationPollingResult({
+        isError: true,
+        error: new ApiError({
+          status: 500,
+          code: 'NETWORK_ERROR',
+          message: '네트워크 연결이 불안정하여 콘텐츠 검증 상태를 확인하지 못했습니다.',
+        }),
+      }),
+    )
+    vi.mocked(useCreateQuiz).mockReturnValue(mockCreateQuizResult())
+
+    renderComponent()
+
+    expect(screen.getByText('네트워크 연결이 불안정하여 콘텐츠 검증 상태를 확인하지 못했습니다.')).toBeInTheDocument()
+  })
+
   it('퀴즈 생성 API 에러 발생 시 ApiError의 상세 메시지를 렌더링한다', () => {
     vi.mocked(useValidationPolling).mockReturnValue(
       mockValidationPollingResult({

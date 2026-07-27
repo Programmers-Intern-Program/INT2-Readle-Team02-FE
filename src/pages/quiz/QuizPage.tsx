@@ -14,7 +14,7 @@ import {
   type QuizQuestion,
 } from '@/pages/quiz/model/quiz'
 import { ROUTES } from '@/shared/config/routes'
-import { ApiError } from '@/shared/api/error'
+import { ApiError, sanitizeErrorMessage } from '@/shared/api/error'
 import '@/pages/quiz/QuizPage.css'
 
 import { QuizNavigator } from '@/pages/quiz/ui/QuizNavigator'
@@ -161,11 +161,11 @@ export function QuizPage() {
           attemptId = startResult.attemptId
         } catch (error: unknown) {
           if (!cancelled) {
+            const rawMsg = (error instanceof ApiError || error instanceof Error) ? error.message : null
+            const message = sanitizeErrorMessage(rawMsg) || '퀴즈를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.'
             setPhase({
               status: 'error',
-              message: error instanceof ApiError && error.message.trim()
-                ? error.message
-                : '퀴즈를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+              message,
             })
           }
           return
@@ -181,11 +181,11 @@ export function QuizPage() {
         if (!cancelled) {
           // 다음 재시도 시 start를 건너뛰고 fetch부터 재개
           pendingAttemptRef.current = { quizId, attemptId }
+          const rawMsg = (error instanceof ApiError || error instanceof Error) ? error.message : null
+          const message = sanitizeErrorMessage(rawMsg) || '문제를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.'
           setPhase({
             status: 'error',
-            message: error instanceof ApiError && error.message.trim()
-              ? error.message
-              : '문제를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.',
+            message,
           })
         }
       }
