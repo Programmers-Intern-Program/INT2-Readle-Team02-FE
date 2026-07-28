@@ -9,6 +9,9 @@ export function useValidationPolling(contentId: number) {
     queryFn: ({ signal }) => getContentValidation(contentId, signal),
     enabled: contentId > 0,
     refetchInterval: (query) => {
+      if (query.state.status === 'error') {
+        return false
+      }
       const status = query.state.data?.status
       // status가 undefined(최초 요청 전)이거나 PENDING일 경우에만 3초 주기 폴링
       return status === 'PENDING' || status === undefined ? 3000 : false
