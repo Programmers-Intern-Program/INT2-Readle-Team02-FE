@@ -74,11 +74,14 @@
 }
 
 .preparation-live-dot {
+  flex-shrink: 0;
   width: 0.45rem;
   height: 0.45rem;
+  border: none;
+  outline: none;
   border-radius: 9999px;
   background: var(--color-status-success);
-  box-shadow: 0 0 0.8rem rgb(52 211 153 / 0.72);
+  box-shadow: none;
   animation: preparation-pulse 1.2s ease-in-out infinite;
 }
 
@@ -244,6 +247,12 @@
   font-size: 0.6875rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.preparation-stage-active .preparation-stage-description {
+  color: var(--color-brand-400);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .preparation-stage-state {
@@ -538,11 +547,32 @@
   }
 }
 
+.preparation-notice-animate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--color-brand-400);
+  font-weight: 600;
+  animation: notice-fade-in 350ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes notice-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .preparation-live-dot,
   .preparation-progress-track span,
   .preparation-stage,
-  .preparation-back-link {
+  .preparation-back-link,
+  .preparation-notice-animate {
     animation: none;
     transition: none;
   }

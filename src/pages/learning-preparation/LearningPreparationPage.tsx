@@ -15,6 +15,12 @@ const preparationSteps = [
   { code: 'GENERATE', description: '학습 목표에 맞는 문제를 구성합니다.', label: '맞춤형 퀴즈 생성' },
 ] as const
 
+const quizGenerationNotices = [
+  '퀴즈와 선택지를 만들고 있어요',
+  '정답이 질문에 드러나지 않았는지 확인하고 있어요',
+  '퀴즈 세트를 정리하고 있어요',
+] as const
+
 function LeavePreparationDialog({
   onCancel,
   onConfirm,
@@ -209,6 +215,23 @@ export function LearningPreparationPage() {
     }
   }, [activeStage, createQuizMutation.isPending])
 
+  const [generatingNoticeIndex, setGeneratingNoticeIndex] = useState(0)
+
+  // GENERATE 단계(3) 대기 시간 동안 3단계 순환 안내문 애니메이션 (2초 간격)
+  useEffect(() => {
+    if (activeStage === 3 && !createQuizMutation.isSuccess && !createQuizMutation.isError) {
+      const timer = window.setInterval(() => {
+        setGeneratingNoticeIndex((prev) => (prev + 1) % quizGenerationNotices.length)
+      }, 2000)
+      return () => {
+        window.clearInterval(timer)
+        setGeneratingNoticeIndex(0)
+      }
+    }
+  }, [activeStage, createQuizMutation.isSuccess, createQuizMutation.isError])
+
+  const generatingNotice = quizGenerationNotices[generatingNoticeIndex]
+
   // 퀴즈 생성 성공 시 4단계 완료 처리 및 라우팅
   useEffect(() => {
     if (createQuizMutation.isSuccess && createQuizMutation.data && !isRoutingRef.current) {
@@ -396,7 +419,14 @@ export function LearningPreparationPage() {
                 ? '모든 준비가 완료되었습니다.'
                 : hasPipelineError
                   ? '문제가 발생했습니다.'
-                  : preparationSteps[activeStage].description}
+                  : activeStage === 3
+                    ? (
+                      <span key={generatingNoticeIndex} className="preparation-notice-animate">
+                        <span aria-hidden="true" className="preparation-live-dot" />
+                        {generatingNotice}
+                      </span>
+                    )
+                    : preparationSteps[activeStage].description}
             </p>
             <strong className="font-mono text-label text-brand-400">
               {currentStep} / {preparationSteps.length} 단계
@@ -446,7 +476,16 @@ export function LearningPreparationPage() {
                     <span className="min-w-0">
                       <span className="preparation-stage-code">{step.code}</span>
                       <strong className="preparation-stage-label">{step.label}</strong>
-                      <span className="preparation-stage-description">{step.description}</span>
+                      <span className="preparation-stage-description">
+                        {isCurrent && index === 3
+                          ? (
+                            <span key={generatingNoticeIndex} className="preparation-notice-animate">
+                              <span aria-hidden="true" className="preparation-live-dot" />
+                              {generatingNotice}
+                            </span>
+                          )
+                          : step.description}
+                      </span>
                     </span>
                     <span aria-hidden="true" className="preparation-stage-state">
                       {isErrorStage ? 'ERROR' : isPassed ? 'DONE' : isCurrent ? 'RUNNING' : 'WAITING'}

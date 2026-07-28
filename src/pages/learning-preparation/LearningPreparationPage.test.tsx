@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, act } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -295,5 +295,54 @@ describe('LearningPreparationPage', () => {
     expect(screen.getByText('퀴즈 생성에 실패했습니다')).toBeInTheDocument()
     expect(screen.getByText('본문 내용이 유효하지 않아 퀴즈를 생성할 수 없습니다.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '입력 화면으로 돌아가기' })).toBeInTheDocument()
+  })
+
+  it('맞춤형 퀴즈 생성 단계(GENERATE)에서는 2초 간격으로 3단계 순환 안내문이 순차적으로 노출된다', () => {
+    vi.useFakeTimers()
+    vi.mocked(useValidationPolling).mockReturnValue(
+      mockValidationPollingResult({
+        data: {
+          contentId: 101,
+          status: 'PASSED',
+          requestedAt: '2026-07-14T10:00:00+09:00',
+          validatedAt: '2026-07-14T10:00:03+09:00',
+        },
+      }),
+    )
+    vi.mocked(useCreateQuiz).mockReturnValue(
+      mockCreateQuizResult({
+        isPending: true,
+      }),
+    )
+
+    renderComponent()
+
+    // 1초 진행하여 activeStage가 CONNECT(2) -> GENERATE(3) 단계로 전환되도록 함
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+
+    // 1단계 안내문 확인
+    expect(screen.getAllByText('퀴즈와 선택지를 만들고 있어요').length).toBeGreaterThan(0)
+
+    // 2초 진행 -> 2단계 안내문 확인
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(screen.getAllByText('정답이 질문에 드러나지 않았는지 확인하고 있어요').length).toBeGreaterThan(0)
+
+    // 2초 진행 -> 3단계 안내문 확인
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(screen.getAllByText('퀴즈 세트를 정리하고 있어요').length).toBeGreaterThan(0)
+
+    // 2초 진행 -> 1단계로 순환
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(screen.getAllByText('퀴즈와 선택지를 만들고 있어요').length).toBeGreaterThan(0)
+
+    vi.useRealTimers()
   })
 })
