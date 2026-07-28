@@ -161,7 +161,7 @@ export function HomePage() {
                       id="learning-url"
                       onBlur={() => handleBlur('url')}
                       onChange={(event) => updateValue('url', event.target.value)}
-                      placeholder="예: https://tech.kakao.com/..."
+                      placeholder="예: https://toss.tech/article/..."
                       type="url"
                       value={values.url}
                     />

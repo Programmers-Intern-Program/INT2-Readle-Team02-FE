@@ -15,32 +15,95 @@ const preparationSteps = [
   { code: 'GENERATE', description: '학습 목표에 맞는 문제를 구성합니다.', label: '맞춤형 퀴즈 생성' },
 ] as const
 
-function KnowledgeGraph({ complete }: { complete: boolean }) {
+function LeavePreparationDialog({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const dialogRef = useRef<HTMLElement>(null)
+  const onCancelRef = useRef(onCancel)
+
+  useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    const previouslyFocused = document.activeElement
+    const focusableElements = dialog?.querySelectorAll<HTMLButtonElement>('button:not([disabled])')
+    const firstFocusable = focusableElements?.[0]
+    const lastFocusable = focusableElements?.[focusableElements.length - 1]
+
+    firstFocusable?.focus()
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onCancelRef.current()
+        return
+      }
+
+      if (event.key !== 'Tab' || !dialog || !firstFocusable || !lastFocusable) {
+        return
+      }
+
+      if (!dialog.contains(document.activeElement)) {
+        event.preventDefault()
+        ;(event.shiftKey ? lastFocusable : firstFocusable).focus()
+      } else if (event.shiftKey && document.activeElement === firstFocusable) {
+        event.preventDefault()
+        lastFocusable.focus()
+      } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+        event.preventDefault()
+        firstFocusable.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+        previouslyFocused.focus()
+      }
+    }
+  }, [])
+
   return (
-    <div
-      aria-label="콘텐츠의 핵심 개념이 퀴즈로 연결되는 지식 그래프"
-      className={`preparation-graph ${complete ? 'preparation-graph-complete' : ''}`}
-      role="img"
-    >
-      <span aria-hidden="true" className="preparation-graph-grid" />
-      <span aria-hidden="true" className="preparation-graph-line preparation-graph-line-1" />
-      <span aria-hidden="true" className="preparation-graph-line preparation-graph-line-2" />
-      <span aria-hidden="true" className="preparation-graph-line preparation-graph-line-3" />
-      <span aria-hidden="true" className="preparation-graph-line preparation-graph-line-4" />
-      <span className="preparation-graph-node preparation-graph-node-core">READLE</span>
-      <span className="preparation-graph-node preparation-graph-node-1">ARTICLE</span>
-      <span className="preparation-graph-node preparation-graph-node-2">CONCEPT</span>
-      <span className="preparation-graph-node preparation-graph-node-3">CONTEXT</span>
-      <span className="preparation-graph-node preparation-graph-node-4">QUIZ</span>
+    <div className="preparation-dialog-backdrop" role="presentation">
+      <section
+        aria-describedby="preparation-leave-description"
+        aria-labelledby="preparation-leave-title"
+        aria-modal="true"
+        className="preparation-leave-dialog"
+        ref={dialogRef}
+        role="dialog"
+      >
+        <span aria-hidden="true" className="preparation-leave-icon">!</span>
+        <p className="preparation-leave-eyebrow">PROCESS IN PROGRESS</p>
+        <h2 id="preparation-leave-title">퀴즈를 생성하고 있습니다</h2>
+        <p id="preparation-leave-description">
+          지금 이동하면 생성 진행 상황을 바로 확인하기 어려울 수 있습니다. 잠시만 기다려 주세요.
+        </p>
+        <div className="preparation-leave-actions">
+          <Button onClick={onCancel}>계속 기다리기</Button>
+          <Button onClick={onConfirm} variant="secondary">페이지 나가기</Button>
+        </div>
+      </section>
     </div>
   )
 }
 
 function ErrorFeedbackPanel({
+  code,
+  title,
   message,
   primaryAction,
   dangerAction,
 }: {
+  code: string
+  title: string
   message: string
   primaryAction?: {
     text: string
@@ -59,30 +122,32 @@ function ErrorFeedbackPanel({
       aria-live="assertive"
       className="flex h-[17.5rem] flex-col items-center justify-center rounded-xl bg-surface-panel p-6 text-center shadow-[inset_0_0_0_1px_var(--color-border-default)]"
     >
-      <span className="text-4xl text-status-error" aria-hidden="true">⚠</span>
-      <p className="mt-4 text-label font-medium text-text-primary">{message}</p>
-      {primaryAction && (
-        <div className="mt-6 w-full max-w-[200px]">
-          <Button
-            fullWidth
-            loading={primaryAction.loading}
-            onClick={primaryAction.onClick}
-            variant="primary"
-          >
-            {primaryAction.text}
-          </Button>
-        </div>
-      )}
-      {dangerAction && (
-        <div className="mt-6 w-full max-w-[200px]">
-          <Button
-            fullWidth
-            loading={dangerAction.loading}
-            onClick={dangerAction.onClick}
-            variant="danger"
-          >
-            {dangerAction.text}
-          </Button>
+      <span className="preparation-error-icon" aria-hidden="true">!</span>
+      <span className="preparation-error-code">{code}</span>
+      <h2 className="mt-3 text-heading font-bold text-text-primary">{title}</h2>
+      <p className="mt-2 max-w-md text-label leading-6 text-text-secondary">{message}</p>
+      {(primaryAction || dangerAction) && (
+        <div className="preparation-feedback-actions">
+          {primaryAction && (
+            <Button
+              className="preparation-feedback-button"
+              loading={primaryAction.loading}
+              onClick={primaryAction.onClick}
+              variant={dangerAction ? 'secondary' : 'primary'}
+            >
+              {primaryAction.text}
+            </Button>
+          )}
+          {dangerAction && (
+            <Button
+              className="preparation-feedback-button"
+              loading={dangerAction.loading}
+              onClick={dangerAction.onClick}
+              variant="danger"
+            >
+              {dangerAction.text}
+            </Button>
+          )}
         </div>
       )}
     </div>
@@ -93,7 +158,9 @@ export function LearningPreparationPage() {
   const navigate = useNavigate()
   const { contentId: contentIdParam } = useParams<{ contentId: string }>()
   const contentId = Number(contentIdParam)
+  const isInvalidContentId = !Number.isInteger(contentId) || contentId <= 0
   const [hasAdvancedToGenerate, setHasAdvancedToGenerate] = useState(false)
+  const [pendingDestination, setPendingDestination] = useState<string | null>(null)
   const isRoutingRef = useRef(false)
   const hasTriggeredCreateRef = useRef(false)
 
@@ -152,7 +219,7 @@ export function LearningPreparationPage() {
       }
 
       const timer = window.setTimeout(() => {
-        void navigate(generatePath(ROUTES.quiz, { quizId: String(quizId) }))
+        void navigate(generatePath(ROUTES.quiz, { quizId: String(quizId) }), { replace: true })
       }, 1000)
 
       return () => window.clearTimeout(timer)
@@ -160,7 +227,12 @@ export function LearningPreparationPage() {
   }, [createQuizMutation.isSuccess, createQuizMutation.data, navigate])
 
   const complete = activeStage >= preparationSteps.length
-  const progress = complete ? 100 : Math.round(((activeStage + 0.35) / preparationSteps.length) * 100)
+  const currentStep = isInvalidContentId
+    ? 0
+    : complete
+      ? preparationSteps.length
+      : Math.min(activeStage + 1, preparationSteps.length)
+  const progress = Math.round((currentStep / preparationSteps.length) * 100)
 
   const pollingAttemptRef = useRef(0)
   const [isPollingTimeout, setIsPollingTimeout] = useState(false)
@@ -171,7 +243,77 @@ export function LearningPreparationPage() {
   const isQuizCreateError = createQuizMutation.isError && (!isGenerationInProgressError || isPollingTimeout)
   const bypassAvailable = validationResponse?.bypassAvailable ?? false
 
-  const hasPipelineError = isRejected || isFailed || isValidationError || isQuizCreateError
+  const hasPipelineError = isInvalidContentId || isRejected || isFailed || isValidationError || isQuizCreateError
+  const shouldWarnBeforeLeaving = !complete && !hasPipelineError && !isInvalidContentId
+
+  useEffect(() => {
+    if (!shouldWarnBeforeLeaving) {
+      return
+    }
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      if (isRoutingRef.current) {
+        return
+      }
+
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    function handleDocumentClick(event: MouseEvent) {
+      if (isRoutingRef.current || event.defaultPrevented || event.button !== 0) {
+        return
+      }
+
+      const target = event.target
+      const link = target instanceof Element ? target.closest<HTMLAnchorElement>('a[href]') : null
+
+      if (
+        !link ||
+        link.target === '_blank' ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return
+      }
+
+      const destination = new URL(link.href, window.location.href)
+      const current = new URL(window.location.href)
+
+      if (
+        destination.origin !== current.origin ||
+        `${destination.pathname}${destination.search}${destination.hash}` ===
+          `${current.pathname}${current.search}${current.hash}`
+      ) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+      setPendingDestination(`${destination.pathname}${destination.search}${destination.hash}`)
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('click', handleDocumentClick, true)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('click', handleDocumentClick, true)
+    }
+  }, [shouldWarnBeforeLeaving])
+
+  function confirmLeave() {
+    if (!pendingDestination) {
+      return
+    }
+
+    isRoutingRef.current = true
+    const destination = pendingDestination
+    setPendingDestination(null)
+    void navigate(destination)
+  }
 
   // 퀴즈 생성이 진행 중이라는 에러(409)를 받으면 3초 간격으로 폴링 자동 재시도 (최대 20회)
   useEffect(() => {
@@ -190,7 +332,19 @@ export function LearningPreparationPage() {
     }
   }, [createQuizMutation.isError, isGenerationInProgressError, isPollingTimeout, createQuizMutation, contentId])
 
-  const errorMessage = isQuizCreateError
+  const errorTitle = isInvalidContentId
+    ? '잘못된 접근입니다'
+    : isQuizCreateError
+      ? '퀴즈 생성에 실패했습니다'
+      : isValidationError
+        ? '검증 상태를 확인하지 못했습니다'
+        : isFailed
+          ? '콘텐츠 검증에 실패했습니다'
+          : '학습 콘텐츠로 사용하기 어렵습니다'
+
+  const errorMessage = isInvalidContentId
+    ? '콘텐츠 정보를 확인할 수 없습니다. 입력 화면에서 학습할 콘텐츠를 다시 등록해 주세요.'
+    : isQuizCreateError
     ? (isPollingTimeout 
         ? '서버 응답이 지연되어 퀴즈 생성을 중단했습니다. 잠시 후 다시 시도해 주세요.' 
         : (sanitizeErrorMessage(createQuizMutation.error?.message, createQuizMutation.error?.code) || 'AI 퀴즈 생성 처리 중 응답이 지연되었습니다. 잠시 후 다시 시도해 주세요.'))
@@ -215,21 +369,21 @@ export function LearningPreparationPage() {
     <main className="preparation-page">
       <section className="mx-auto max-w-content py-10 sm:py-14 lg:py-16" aria-labelledby="preparation-title">
         <div className="preparation-heading">
-          <div>
+          <div className="preparation-heading-copy">
             <div className="flex items-center gap-2">
               <span aria-hidden="true" className="preparation-live-dot" />
               <p className="font-mono text-[0.625rem] font-bold tracking-[0.16em] text-brand-400">
                 READLE KNOWLEDGE COMPILER
               </p>
             </div>
-            <h1 className="mt-3 text-title font-bold text-text-primary sm:text-[2.25rem]" id="preparation-title">
+            <h1 className="preparation-title mt-3" id="preparation-title">
               {complete
                 ? '퀴즈 생성 준비가 완료됐습니다'
                 : hasPipelineError
                   ? '퀴즈 생성이 중단되었습니다'
                   : '퀴즈를 만들고 있습니다'}
             </h1>
-            <p className="mt-3 max-w-2xl text-label leading-6 text-text-muted">
+            <p className="preparation-subtitle mt-3 max-w-2xl">
               콘텐츠를 분석하고 핵심 개념을 연결해 맞춤형 문제를 구성합니다.
             </p>
           </div>
@@ -245,7 +399,9 @@ export function LearningPreparationPage() {
                   ? '문제가 발생했습니다.'
                   : preparationSteps[activeStage].description}
             </p>
-            <strong className="font-mono text-label text-brand-400">{progress}%</strong>
+            <strong className="font-mono text-label text-brand-400">
+              {currentStep} / {preparationSteps.length} 단계
+            </strong>
           </div>
           <div
             aria-label="퀴즈 생성 진행률"
@@ -263,30 +419,38 @@ export function LearningPreparationPage() {
           <section className="preparation-stage-panel" aria-label="퀴즈 생성 단계">
             <div className="preparation-panel-header">
               <span>PROCESS PIPELINE</span>
-              <span>{complete ? 'COMPILED' : hasPipelineError ? 'HALTED' : 'RUNNING'}</span>
+              <span>
+                STEP {String(currentStep).padStart(2, '0')} / {String(preparationSteps.length).padStart(2, '0')}
+              </span>
             </div>
             <ol className="preparation-stage-list">
               {preparationSteps.map((step, index) => {
-                const isComplete = index < activeStage
-                const isActive = index === activeStage && !complete && !hasPipelineError
-                const isErrorState = index === activeStage && hasPipelineError
+                const isPassed = !isInvalidContentId && (complete || index < activeStage)
+                const isCurrent = !complete && index === activeStage
+                const isErrorStage = !isInvalidContentId && isCurrent && hasPipelineError
 
                 return (
                   <li
-                    aria-current={isActive || isErrorState ? 'step' : undefined}
-                    className={`preparation-stage ${isActive ? 'preparation-stage-active' : ''} ${isComplete ? 'preparation-stage-complete' : ''} ${isErrorState ? 'preparation-stage-error' : ''}`}
+                    aria-current={isCurrent ? 'step' : undefined}
+                    className={`preparation-stage ${
+                      isErrorStage
+                        ? 'preparation-stage-error'
+                        : isCurrent
+                          ? 'preparation-stage-active'
+                          : isPassed
+                            ? 'preparation-stage-complete'
+                            : ''
+                    }`}
                     key={step.code}
                   >
-                    <span className="preparation-stage-number">
-                      {isComplete ? '✓' : isErrorState ? '⚠' : `0${index + 1}`}
-                    </span>
+                    <span className="preparation-stage-number">{isPassed ? '✓' : String(index + 1).padStart(2, '0')}</span>
                     <span className="min-w-0">
                       <span className="preparation-stage-code">{step.code}</span>
                       <strong className="preparation-stage-label">{step.label}</strong>
                       <span className="preparation-stage-description">{step.description}</span>
                     </span>
                     <span aria-hidden="true" className="preparation-stage-state">
-                      {isComplete ? 'DONE' : isErrorState ? 'ERROR' : isActive ? 'RUNNING' : 'WAITING'}
+                      {isErrorStage ? 'ERROR' : isPassed ? 'DONE' : isCurrent ? 'RUNNING' : 'WAITING'}
                     </span>
                   </li>
                 )
@@ -294,13 +458,22 @@ export function LearningPreparationPage() {
             </ol>
           </section>
 
-          <section className="preparation-graph-panel" aria-labelledby="graph-title">
-            <div className="preparation-panel-header">
-              <span id="graph-title">{hasPipelineError ? 'PROCESS ERROR' : 'KNOWLEDGE MAP'}</span>
-              <span>{hasPipelineError ? 'FAILED' : 'LIVE'}</span>
-            </div>
-            {isQuizCreateError ? (
+          {hasPipelineError && (
+            <section className="preparation-feedback-panel" aria-label="처리 오류 안내">
+              {isInvalidContentId ? (
               <ErrorFeedbackPanel
+                code="INVALID_CONTENT"
+                title={errorTitle}
+                message={errorMessage}
+                primaryAction={{
+                  text: '입력 화면으로 이동',
+                  onClick: () => void navigate(ROUTES.home),
+                }}
+              />
+              ) : isQuizCreateError ? (
+              <ErrorFeedbackPanel
+                code="QUIZ_GENERATION_ERROR"
+                title={errorTitle}
                 message={errorMessage}
                 primaryAction={{
                   text: '퀴즈 생성 재시도',
@@ -308,16 +481,20 @@ export function LearningPreparationPage() {
                   loading: createQuizMutation.isPending,
                 }}
               />
-            ) : isValidationError ? (
+              ) : isValidationError ? (
               <ErrorFeedbackPanel
+                code="VALIDATION_NETWORK_ERROR"
+                title={errorTitle}
                 message={errorMessage}
                 primaryAction={{
                   text: '다시 시도',
                   onClick: () => void retryValidation(),
                 }}
               />
-            ) : isFailed ? (
+              ) : isFailed ? (
               <ErrorFeedbackPanel
+                code="CONTENT_VALIDATION_FAILED"
+                title={errorTitle}
                 message={errorMessage}
                 primaryAction={{
                   text: '다시 시도',
@@ -325,9 +502,15 @@ export function LearningPreparationPage() {
                   loading: retryValidationMutation.isPending,
                 }}
               />
-            ) : isRejected ? (
+              ) : (
               <ErrorFeedbackPanel
+                code="CONTENT_REJECTED"
+                title={errorTitle}
                 message={errorMessage}
+                primaryAction={{
+                  text: '콘텐츠 수정하기',
+                  onClick: () => void navigate(ROUTES.home),
+                }}
                 dangerAction={
                   bypassAvailable
                     ? {
@@ -338,17 +521,9 @@ export function LearningPreparationPage() {
                     : undefined
                 }
               />
-            ) : (
-              <>
-                <KnowledgeGraph complete={complete} />
-                <div className="preparation-tags" aria-label="감지된 핵심 태그">
-                  <span>#architecture</span>
-                  <span>#backend</span>
-                  <span>#transaction</span>
-                </div>
-              </>
-            )}
-          </section>
+              )}
+            </section>
+          )}
         </div>
 
         <footer className="preparation-footer">
@@ -361,7 +536,7 @@ export function LearningPreparationPage() {
                   : '잠시만 기다려 주세요.'}
             </p>
             <p className="mt-1 text-[0.6875rem] leading-5 text-text-muted">
-              실제 API 연동 후 서버의 생성 상태와 동기화됩니다.
+              서버의 검증 및 퀴즈 생성 상태를 자동으로 확인하고 있습니다.
             </p>
           </div>
           <Link className="preparation-back-link" to={ROUTES.home}>
@@ -369,6 +544,12 @@ export function LearningPreparationPage() {
           </Link>
         </footer>
       </section>
+      {pendingDestination && (
+        <LeavePreparationDialog
+          onCancel={() => setPendingDestination(null)}
+          onConfirm={confirmLeave}
+        />
+      )}
     </main>
   )
 }
