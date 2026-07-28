@@ -7,6 +7,7 @@ export interface ResultReportTag {
 
 export interface QuestionResult {
   aiFeedback: string | null
+  submittedChoiceNo?: number | null
   correctChoiceNo?: number | null
   correctChoiceText?: string | null
   isCorrect: boolean
@@ -50,6 +51,7 @@ export const mockResultReport: ResultReport = {
       orderNo: 1,
       questionType: 'multiple_choice',
       questionText: 'Spring의 @Transactional이 적용된 메서드에서 런타임 예외가 발생하면 기본적으로 어떤 동작을 하나요?',
+      submittedChoiceNo: 1,
       submittedAnswer: '트랜잭션을 롤백하고 예외를 다시 던진다.',
       isCorrect: true,
       aiFeedback: null,
@@ -61,6 +63,7 @@ export const mockResultReport: ResultReport = {
       orderNo: 2,
       questionType: 'short_answer',
       questionText: '같은 클래스 내부에서 @Transactional 메서드를 직접 호출할 때 트랜잭션이 적용되지 않을 수 있는 이유를 설명해 주세요.',
+      submittedChoiceNo: null,
       submittedAnswer: '같은 객체 안에서 호출하면 새로운 트랜잭션이 만들어지지 않기 때문입니다.',
       isCorrect: false,
       aiFeedback: '핵심은 새로운 트랜잭션의 생성 여부가 아니라 프록시를 거치지 않는다는 점입니다. Spring AOP가 트랜잭션을 적용하는 호출 경로를 다시 확인해 보세요.',
@@ -72,6 +75,7 @@ export const mockResultReport: ResultReport = {
       orderNo: 3,
       questionType: 'multiple_choice',
       questionText: '기존 트랜잭션의 존재 여부와 관계없이 항상 새로운 트랜잭션을 시작하는 전파 속성은 무엇인가요?',
+      submittedChoiceNo: 1,
       submittedAnswer: 'REQUIRED',
       isCorrect: false,
       aiFeedback: null,
@@ -83,6 +87,7 @@ export const mockResultReport: ResultReport = {
       orderNo: 4,
       questionType: 'code_blank',
       questionText: '읽기 전용 트랜잭션으로 설정하려면 빈칸에 들어갈 속성을 입력해 주세요.',
+      submittedChoiceNo: null,
       submittedAnswer: 'readonly',
       isCorrect: false,
       aiFeedback: '속성 이름은 대소문자를 구분합니다. Spring의 @Transactional에서 읽기 전용 여부를 지정하는 camelCase 속성명을 확인해 보세요.',
@@ -94,6 +99,7 @@ export const mockResultReport: ResultReport = {
       orderNo: 5,
       questionType: 'short_answer',
       questionText: '트랜잭션 경계를 서비스 계층에 두는 것이 일반적으로 적절한 이유를 한 문장으로 작성해 주세요.',
+      submittedChoiceNo: null,
       submittedAnswer: '여러 저장소 작업을 하나의 비즈니스 작업 단위로 묶어 일관성을 보장하기 위해서입니다.',
       isCorrect: true,
       aiFeedback: null,

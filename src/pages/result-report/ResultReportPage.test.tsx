@@ -115,31 +115,50 @@ describe('ResultReportPage', () => {
     expect(screen.getByText('정답 선택지')).toBeInTheDocument()
     expect(screen.getByText(/3번\. REQUIRES_NEW/)).toBeInTheDocument()
   })
+
+  it('객관식 문항의 제출 답안 영역에 제출 답안 번호(예: 1번.)가 포함되어 렌더링된다', async () => {
+    const user = userEvent.setup()
+    vi.mocked(getResultReportDetail).mockResolvedValueOnce(mockResultReport)
+    renderPage()
+
+    expect(await screen.findByText('Spring @Transactional 심층 이해')).toBeInTheDocument()
+
+    const questionText = screen.getByText(
+      'Spring의 @Transactional이 적용된 메서드에서 런타임 예외가 발생하면 기본적으로 어떤 동작을 하나요?',
+    )
+    await user.click(questionText)
+
+    expect(screen.getByText(/1번\. 트랜잭션을 롤백하고 예외를 다시 던진다\./)).toBeInTheDocument()
+  })
 })
 
 describe('result report model', () => {
-  it('API 계약에 맞게 객관식 오답 문항에만 정답 선택지가 제공된다', () => {
+  it('API 계약에 맞게 객관식 오답 문항에만 정답 선택지가 제공되며 submittedChoiceNo가 올바르게 설정된다', () => {
     const mcIncorrect = mockResultReport.results.find(
       (r) => r.questionType === 'multiple_choice' && !r.isCorrect,
     )
+    expect(mcIncorrect?.submittedChoiceNo).toBe(1)
     expect(mcIncorrect?.correctChoiceNo).toBe(3)
     expect(mcIncorrect?.correctChoiceText).toBe('REQUIRES_NEW')
 
     const mcCorrect = mockResultReport.results.find(
       (r) => r.questionType === 'multiple_choice' && r.isCorrect,
     )
+    expect(mcCorrect?.submittedChoiceNo).toBe(1)
     expect(mcCorrect?.correctChoiceNo).toBeNull()
     expect(mcCorrect?.correctChoiceText).toBeNull()
 
     const codeBlankIncorrect = mockResultReport.results.find(
       (r) => r.questionType === 'code_blank' && !r.isCorrect,
     )
+    expect(codeBlankIncorrect?.submittedChoiceNo).toBeNull()
     expect(codeBlankIncorrect?.correctChoiceNo).toBeNull()
     expect(codeBlankIncorrect?.correctChoiceText).toBeNull()
 
     const shortAnswerIncorrect = mockResultReport.results.find(
       (r) => r.questionType === 'short_answer' && !r.isCorrect,
     )
+    expect(shortAnswerIncorrect?.submittedChoiceNo).toBeNull()
     expect(shortAnswerIncorrect?.correctChoiceNo).toBeNull()
     expect(shortAnswerIncorrect?.correctChoiceText).toBeNull()
   })
