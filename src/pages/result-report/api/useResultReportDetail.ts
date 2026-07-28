@@ -2,14 +2,13 @@ import { useQuery } from '@tanstack/react-query'
 import { getResultReportDetail } from '@/shared/api/report'
 import type { ResultReport } from '@/pages/result-report/model/resultReport'
 import type { ApiError } from '@/shared/api/error'
+import { isPositiveIntegerId } from '@/shared/utils/id'
 
 export function useResultReportDetail(reportId: string) {
-  const isValidReportId = /^\d+$/.test(reportId) && Number(reportId) > 0
-
   return useQuery<ResultReport, ApiError>({
     queryKey: ['result-report', reportId],
     queryFn: () => getResultReportDetail(reportId),
-    enabled: isValidReportId,
+    enabled: isPositiveIntegerId(reportId),
     staleTime: 5 * 60 * 1000, // 5분
   })
 }

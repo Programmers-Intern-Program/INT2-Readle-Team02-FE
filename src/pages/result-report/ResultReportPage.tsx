@@ -10,6 +10,7 @@ import { questionTypeLabel } from '@/pages/quiz/model/quiz'
 import { ROUTES } from '@/shared/config/routes'
 import { Button, ErrorMessage, Loading } from '@/shared/ui'
 import { sanitizeErrorMessage } from '@/shared/api/error'
+import { isPositiveIntegerId } from '@/shared/utils/id'
 import { useResultReportDetail } from '@/pages/result-report/api/useResultReportDetail'
 import '@/pages/result-report/ResultReportPage.css'
 
@@ -137,7 +138,7 @@ function ReportErrorState({
 
 export function ResultReportPage() {
   const { reportId = '' } = useParams<{ reportId: string }>()
-  const isValidReportId = /^\d+$/.test(reportId) && Number(reportId) > 0
+  const isValidReportId = isPositiveIntegerId(reportId)
   const { data: report, isLoading, isFetching, error, refetch } = useResultReportDetail(reportId)
 
   if (!isValidReportId) return <ReportErrorState state="invalid" />
