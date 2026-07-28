@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -90,8 +90,10 @@ describe('LearningPreparationPage', () => {
 
     const html = renderToStaticMarkup(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          <LearningPreparationPage />
+        <MemoryRouter initialEntries={['/contents/101/preparing']}>
+          <Routes>
+            <Route path="/contents/:contentId/preparing" element={<LearningPreparationPage />} />
+          </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
     )
@@ -102,8 +104,49 @@ describe('LearningPreparationPage', () => {
     expect(html).toContain('학습 콘텐츠 검증')
     expect(html).toContain('지식 구조 연결')
     expect(html).toContain('맞춤형 퀴즈 생성')
-    expect(html).toContain('KNOWLEDGE MAP')
+    expect(html).not.toContain('KNOWLEDGE MAP')
+    expect(html).toContain('2 / 4 단계')
+    expect(html).toContain('서버의 검증 및 퀴즈 생성 상태를 자동으로 확인하고 있습니다.')
+    expect(html).not.toContain('#architecture')
+    expect(html).not.toContain('#backend')
+    expect(html).not.toContain('#transaction')
+    expect(html).not.toContain('실제 API 연동 후')
     expect(html).toContain('입력 화면으로 돌아가기')
+  })
+
+  it('생성 중 입력 화면으로 이동하면 이탈 경고를 표시하고 취소할 수 있다', () => {
+    vi.mocked(useValidationPolling).mockReturnValue(
+      mockValidationPollingResult({
+        data: {
+          contentId: 101,
+          status: 'PENDING',
+          requestedAt: '2026-07-14T10:00:00+09:00',
+          validatedAt: null,
+        },
+      }),
+    )
+    vi.mocked(useCreateQuiz).mockReturnValue(mockCreateQuizResult())
+
+    renderComponent()
+    fireEvent.click(screen.getByRole('link', { name: '입력 화면으로 돌아가기' }))
+
+    expect(screen.getByRole('dialog', { name: '퀴즈를 생성하고 있습니다' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '계속 기다리기' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByText('퀴즈를 만들고 있습니다')).toBeInTheDocument()
+  })
+
+  it('잘못된 콘텐츠 ID로 접근하면 생성 중 화면 대신 복구 안내를 표시한다', () => {
+    vi.mocked(useValidationPolling).mockReturnValue(mockValidationPollingResult())
+    vi.mocked(useCreateQuiz).mockReturnValue(mockCreateQuizResult())
+
+    renderComponent('invalid')
+
+    expect(screen.getByText('잘못된 접근입니다')).toBeInTheDocument()
+    expect(screen.getByText(/콘텐츠 정보를 확인할 수 없습니다/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '입력 화면으로 이동' })).toBeInTheDocument()
+    expect(screen.getByText('0 / 4 단계')).toBeInTheDocument()
   })
 
   it('콘텐츠 검증 거절(REJECTED) 시 백엔드 상세 사유 메시지를 렌더링한다', () => {
@@ -125,6 +168,7 @@ describe('LearningPreparationPage', () => {
     renderComponent()
 
     expect(screen.getByText('퀴즈 생성이 중단되었습니다')).toBeInTheDocument()
+    expect(screen.getByText('학습 콘텐츠로 사용하기 어렵습니다')).toBeInTheDocument()
     expect(screen.getByText('개발/기술 학습 콘텐츠로 인식되지 않았습니다. 관련된 콘텐츠를 등록해 주세요.')).toBeInTheDocument()
   })
 
@@ -146,6 +190,7 @@ describe('LearningPreparationPage', () => {
 
     renderComponent()
 
+    expect(screen.getByText('콘텐츠 검증에 실패했습니다')).toBeInTheDocument()
     expect(screen.getByText('AI 검증 서비스 연동 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.')).toBeInTheDocument()
   })
 
@@ -164,6 +209,7 @@ describe('LearningPreparationPage', () => {
 
     renderComponent()
 
+    expect(screen.getByText('검증 상태를 확인하지 못했습니다')).toBeInTheDocument()
     expect(screen.getByText('네트워크 연결이 불안정하여 콘텐츠 검증 상태를 확인하지 못했습니다.')).toBeInTheDocument()
   })
 
@@ -191,6 +237,7 @@ describe('LearningPreparationPage', () => {
 
     renderComponent()
 
+    expect(screen.getByText('퀴즈 생성에 실패했습니다')).toBeInTheDocument()
     expect(screen.getByText('본문 내용이 유효하지 않아 퀴즈를 생성할 수 없습니다.')).toBeInTheDocument()
     expect(screen.getByText('퀴즈 생성 재시도')).toBeInTheDocument()
   })
