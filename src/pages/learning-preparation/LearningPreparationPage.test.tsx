@@ -57,16 +57,20 @@ function mockCreateQuizResult(
   } as unknown as UseMutationResult<QuizCreateResponse, ApiError, QuizCreateRequest>
 }
 
-function renderComponent(contentId = '101') {
-  return render(
+function componentTree(contentId = '101') {
+  return (
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[`/contents/${contentId}/preparing`]}>
         <Routes>
           <Route path="/contents/:contentId/preparing" element={<LearningPreparationPage />} />
         </Routes>
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
+}
+
+function renderComponent(contentId = '101') {
+  return render(componentTree(contentId))
 }
 
 describe('LearningPreparationPage', () => {
@@ -137,6 +141,55 @@ describe('LearningPreparationPage', () => {
     expect(screen.getByText('퀴즈를 만들고 있습니다')).toBeInTheDocument()
   })
 
+  it('이탈 모달이 열린 동안 배경이 다시 렌더링되어도 현재 포커스를 유지한다', () => {
+    vi.mocked(useValidationPolling).mockReturnValue(
+      mockValidationPollingResult({
+        data: {
+          contentId: 101,
+          status: 'PENDING',
+          requestedAt: '2026-07-14T10:00:00+09:00',
+          validatedAt: null,
+        },
+      }),
+    )
+    vi.mocked(useCreateQuiz).mockReturnValue(mockCreateQuizResult())
+
+    const view = renderComponent()
+    fireEvent.click(screen.getByRole('link', { name: '입력 화면으로 돌아가기' }))
+    const leaveButton = screen.getByRole('button', { name: '페이지 나가기' })
+    leaveButton.focus()
+
+    view.rerender(componentTree())
+
+    expect(leaveButton).toHaveFocus()
+  })
+
+  it('이탈 모달의 처음과 마지막 버튼 사이에서 Tab 포커스를 순환한다', () => {
+    vi.mocked(useValidationPolling).mockReturnValue(
+      mockValidationPollingResult({
+        data: {
+          contentId: 101,
+          status: 'PENDING',
+          requestedAt: '2026-07-14T10:00:00+09:00',
+          validatedAt: null,
+        },
+      }),
+    )
+    vi.mocked(useCreateQuiz).mockReturnValue(mockCreateQuizResult())
+
+    renderComponent()
+    fireEvent.click(screen.getByRole('link', { name: '입력 화면으로 돌아가기' }))
+    const waitButton = screen.getByRole('button', { name: '계속 기다리기' })
+    const leaveButton = screen.getByRole('button', { name: '페이지 나가기' })
+
+    leaveButton.focus()
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(waitButton).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(leaveButton).toHaveFocus()
+  })
+
   it('잘못된 콘텐츠 ID로 접근하면 생성 중 화면 대신 복구 안내를 표시한다', () => {
     vi.mocked(useValidationPolling).mockReturnValue(mockValidationPollingResult())
     vi.mocked(useCreateQuiz).mockReturnValue(mockCreateQuizResult())
@@ -147,6 +200,8 @@ describe('LearningPreparationPage', () => {
     expect(screen.getByText(/콘텐츠 정보를 확인할 수 없습니다/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '입력 화면으로 이동' })).toBeInTheDocument()
     expect(screen.getByText('0 / 4 단계')).toBeInTheDocument()
+    expect(screen.getByText('STEP 00 / 04')).toBeInTheDocument()
+    expect(screen.queryByText('ERROR')).not.toBeInTheDocument()
   })
 
   it('콘텐츠 검증 거절(REJECTED) 시 백엔드 상세 사유 메시지를 렌더링한다', () => {

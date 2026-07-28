@@ -23,14 +23,40 @@ function LeavePreparationDialog({
   onConfirm: () => void
 }) {
   const dialogRef = useRef<HTMLElement>(null)
+  const onCancelRef = useRef(onCancel)
 
   useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
+
+  useEffect(() => {
+    const dialog = dialogRef.current
     const previouslyFocused = document.activeElement
-    dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+    const focusableElements = dialog?.querySelectorAll<HTMLButtonElement>('button:not([disabled])')
+    const firstFocusable = focusableElements?.[0]
+    const lastFocusable = focusableElements?.[focusableElements.length - 1]
+
+    firstFocusable?.focus()
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        onCancel()
+        onCancelRef.current()
+        return
+      }
+
+      if (event.key !== 'Tab' || !dialog || !firstFocusable || !lastFocusable) {
+        return
+      }
+
+      if (!dialog.contains(document.activeElement)) {
+        event.preventDefault()
+        ;(event.shiftKey ? lastFocusable : firstFocusable).focus()
+      } else if (event.shiftKey && document.activeElement === firstFocusable) {
+        event.preventDefault()
+        lastFocusable.focus()
+      } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+        event.preventDefault()
+        firstFocusable.focus()
       }
     }
 
@@ -42,7 +68,7 @@ function LeavePreparationDialog({
         previouslyFocused.focus()
       }
     }
-  }, [onCancel])
+  }, [])
 
   return (
     <div className="preparation-dialog-backdrop" role="presentation">
@@ -393,13 +419,15 @@ export function LearningPreparationPage() {
           <section className="preparation-stage-panel" aria-label="퀴즈 생성 단계">
             <div className="preparation-panel-header">
               <span>PROCESS PIPELINE</span>
-              <span>STEP {String(currentStep).padStart(2, '0')} / 04</span>
+              <span>
+                STEP {String(currentStep).padStart(2, '0')} / {String(preparationSteps.length).padStart(2, '0')}
+              </span>
             </div>
             <ol className="preparation-stage-list">
               {preparationSteps.map((step, index) => {
                 const isPassed = !isInvalidContentId && (complete || index < activeStage)
                 const isCurrent = !complete && index === activeStage
-                const isErrorStage = isCurrent && hasPipelineError
+                const isErrorStage = !isInvalidContentId && isCurrent && hasPipelineError
 
                 return (
                   <li
