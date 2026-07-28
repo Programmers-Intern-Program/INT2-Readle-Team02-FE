@@ -373,4 +373,31 @@ describe('LearningPreparationPage', () => {
 
     sessionStorage.removeItem('created_quiz_101')
   })
+
+  it('생성 대기 중 새로고침 시 quiz_triggered 키가 존재하면 POST 요청을 재발송하지 않는다', () => {
+    sessionStorage.setItem('quiz_triggered_101', 'true')
+
+    const mutateMock = vi.fn()
+    vi.mocked(useValidationPolling).mockReturnValue(
+      mockValidationPollingResult({
+        data: {
+          contentId: 101,
+          status: 'PASSED',
+          requestedAt: '2026-07-14T10:00:00+09:00',
+          validatedAt: '2026-07-14T10:00:03+09:00',
+        },
+      }),
+    )
+    vi.mocked(useCreateQuiz).mockReturnValue(
+      mockCreateQuizResult({
+        mutate: mutateMock,
+      }),
+    )
+
+    renderComponent('101')
+
+    expect(mutateMock).not.toHaveBeenCalled()
+
+    sessionStorage.removeItem('quiz_triggered_101')
+  })
 })
