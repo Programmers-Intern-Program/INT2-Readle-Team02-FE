@@ -106,6 +106,10 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
     const timers: number[] = []
     const willFail = shouldFailFirstAttempt && attemptNumber === 0
 
+    const clearAllTimers = () => {
+      timers.forEach((timer) => window.clearTimeout(timer))
+    }
+
     gradingSteps.slice(1, willFail ? 3 : undefined).forEach((_, index) => {
       timers.push(window.setTimeout(() => {
         if (isMounted) setActiveStage(index + 1)
@@ -147,12 +151,15 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
         ])
         
         if (!isMounted) return
+        clearAllTimers()
         setReportId(result.reportId)
         setActiveStage(gradingSteps.length - 1)
         setStatus('success')
       } catch (error: unknown) {
         if (!isMounted) return
-        
+
+        clearAllTimers()
+
         if (error instanceof ApiError) {
           const safeMsg = sanitizeErrorMessage(error.message, error.code)
           if (safeMsg) setErrorMessage(safeMsg)
@@ -193,7 +200,10 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
     if (willFail) {
       timers.push(
         window.setTimeout(() => {
-          if (isMounted) setStatus('error')
+          if (isMounted) {
+            clearAllTimers()
+            setStatus('error')
+          }
         }, 2400)
       )
     } else {
@@ -202,7 +212,7 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
 
     return () => {
       isMounted = false
-      timers.forEach((timer) => window.clearTimeout(timer))
+      clearAllTimers()
     }
   }, [attemptId, attemptNumber, submitRequest, navigate, shouldFailFirstAttempt])
 

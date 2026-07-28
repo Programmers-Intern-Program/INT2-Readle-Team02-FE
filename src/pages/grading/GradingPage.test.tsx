@@ -226,4 +226,45 @@ describe('GradingPage', () => {
       '/result-reports/701',
     )
   })
+
+  it('?mock=failed 진입 시 에러가 발생하면 타이머가 중단되어 진행 단계가 더 이상 증가하지 않는다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(submitQuizAttempt).mockClear()
+
+    render(
+        <MemoryRouter
+            initialEntries={[
+              {
+                pathname: '/quizzes/attempts/99/grading',
+                search: '?mock=failed', // 강제 실패 트리거
+                state: { submitRequest: { answers: [] } }
+              }
+            ]}
+        >
+          <Routes>
+            <Route path="/quizzes/attempts/:attemptId/grading" element={<GradingPage />} />
+          </Routes>
+        </MemoryRouter>,
+    )
+
+    // 1. 1000ms 진행: 800ms 타이머 1개 실행됨 -> 단계는 '2 / 5'가 되어야 함
+    await act(async () => {
+      vi.advanceTimersByTime(1000)
+    })
+    expect(screen.getByText('2 / 5')).toBeInTheDocument()
+
+    // 2. 5000ms 추가 진행: 2400ms에서 에러가 발생하여 타이머가 클리어 됨
+    // 즉, 1600ms(3단계)까지만 실행되고 3200ms(4단계), 4000ms(5단계)는 실행되지 않아야 함
+    await act(async () => {
+      vi.advanceTimersByTime(5000)
+    })
+
+    // 3. 에러 상태로 변경되었는지 확인
+    expect(screen.getByText('채점 중 문제가 발생했습니다')).toBeInTheDocument()
+
+    // 4. 타이머 클린업이 정상 작동했다면 4/5나 5/5로 넘어가지 않고 3/5에서 정지해 있어야 함
+    expect(screen.getByText('3 / 5')).toBeInTheDocument()
+    expect(screen.queryByText('4 / 5')).not.toBeInTheDocument()
+    expect(screen.queryByText('5 / 5')).not.toBeInTheDocument()
+  })
 })
