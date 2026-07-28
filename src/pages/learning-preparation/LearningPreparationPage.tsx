@@ -118,14 +118,18 @@ function ErrorFeedbackPanel({
 }) {
   return (
     <div
-      role="alert"
       aria-live="assertive"
-      className="flex h-[17.5rem] flex-col items-center justify-center rounded-xl bg-surface-panel p-6 text-center shadow-[inset_0_0_0_1px_var(--color-border-default)]"
+      className="preparation-error-panel"
+      role="alert"
     >
-      <span className="preparation-error-icon" aria-hidden="true">!</span>
+      <span className="preparation-error-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 7.25v6.5M12 17.25h.01" />
+        </svg>
+      </span>
       <span className="preparation-error-code">{code}</span>
-      <h2 className="mt-3 text-heading font-bold text-text-primary">{title}</h2>
-      <p className="mt-2 max-w-md text-label leading-6 text-text-secondary">{message}</p>
+      <h2>{title}</h2>
+      <p>{message}</p>
       {(primaryAction || dangerAction) && (
         <div className="preparation-feedback-actions">
           {primaryAction && (
@@ -345,9 +349,9 @@ export function LearningPreparationPage() {
   const errorMessage = isInvalidContentId
     ? '콘텐츠 정보를 확인할 수 없습니다. 입력 화면에서 학습할 콘텐츠를 다시 등록해 주세요.'
     : isQuizCreateError
-    ? (isPollingTimeout 
-        ? '서버 응답이 지연되어 퀴즈 생성을 중단했습니다. 잠시 후 다시 시도해 주세요.' 
-        : (sanitizeErrorMessage(createQuizMutation.error?.message, createQuizMutation.error?.code) || 'AI 퀴즈 생성 처리 중 응답이 지연되었습니다. 잠시 후 다시 시도해 주세요.'))
+    ? (isPollingTimeout
+        ? '서버 응답이 지연되어 퀴즈 생성을 중단했습니다. 입력 화면으로 돌아가 내용을 확인한 뒤 다시 시도해 주세요.'
+        : (sanitizeErrorMessage(createQuizMutation.error?.message, createQuizMutation.error?.code) || '퀴즈를 생성하지 못했습니다. 입력 화면으로 돌아가 내용을 확인한 뒤 다시 시도해 주세요.'))
     : isValidationError
       ? (sanitizeErrorMessage(useValidationPollingError?.message, useValidationPollingError?.code) || '네트워크 연결이 불안정하여 콘텐츠 검증 상태를 확인하지 못했습니다.')
       : (sanitizeErrorMessage(validationResponse?.message, validationResponse?.errorCode) || (isFailed ? '콘텐츠 검증 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' : '개발 및 학습에 적합하지 않은 콘텐츠로 판정되었습니다.'))
@@ -356,13 +360,6 @@ export function LearningPreparationPage() {
     if (!createQuizMutation.isPending) {
       createQuizMutation.mutate({ sourceValidationId: contentId })
     }
-  }
-
-  const handleRetryQuiz = () => {
-    pollingAttemptRef.current = 0
-    setIsPollingTimeout(false)
-    createQuizMutation.reset()
-    createQuizMutation.mutate({ sourceValidationId: contentId })
   }
 
   return (
@@ -476,9 +473,8 @@ export function LearningPreparationPage() {
                 title={errorTitle}
                 message={errorMessage}
                 primaryAction={{
-                  text: '퀴즈 생성 재시도',
-                  onClick: handleRetryQuiz,
-                  loading: createQuizMutation.isPending,
+                  text: '입력 화면으로 돌아가기',
+                  onClick: () => void navigate(ROUTES.home),
                 }}
               />
               ) : isValidationError ? (
@@ -539,9 +535,11 @@ export function LearningPreparationPage() {
               서버의 검증 및 퀴즈 생성 상태를 자동으로 확인하고 있습니다.
             </p>
           </div>
-          <Link className="preparation-back-link" to={ROUTES.home}>
-            입력 화면으로 돌아가기
-          </Link>
+          {!hasPipelineError && (
+            <Link className="preparation-back-link" to={ROUTES.home}>
+              입력 화면으로 돌아가기
+            </Link>
+          )}
         </footer>
       </section>
       {pendingDestination && (

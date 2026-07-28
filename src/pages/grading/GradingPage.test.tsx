@@ -73,7 +73,12 @@ describe('GradingPage', () => {
   it('새로고침 시 sessionStorage에서 답안을 한 번만 복구하고 중복 제출을 방지한다', async () => {
     vi.useFakeTimers()
     vi.mocked(submitQuizAttempt).mockClear()
-    const sessionStorageSpy = vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(JSON.stringify({ answers: [] }))
+    const originalSessionStorage = Object.getOwnPropertyDescriptor(window, 'sessionStorage')
+    const sessionStorageSpy = vi.fn().mockReturnValue(JSON.stringify({ answers: [] }))
+    Object.defineProperty(window, 'sessionStorage', {
+      configurable: true,
+      value: { getItem: sessionStorageSpy },
+    })
     
     vi.mocked(submitQuizAttempt).mockResolvedValueOnce({
       reportId: 701,
@@ -104,7 +109,9 @@ describe('GradingPage', () => {
     // 제출 로직 역시 Effect가 한 번만 실행되므로 1회만 호출됨
     expect(submitQuizAttempt).toHaveBeenCalledTimes(1)
     
-    sessionStorageSpy.mockRestore()
+    if (originalSessionStorage) {
+      Object.defineProperty(window, 'sessionStorage', originalSessionStorage)
+    }
   })
 
   it('StrictMode 환경의 effect 재실행 시에도 제출은 1회만 발생하고 최종 완료 상태에 도달한다', async () => {

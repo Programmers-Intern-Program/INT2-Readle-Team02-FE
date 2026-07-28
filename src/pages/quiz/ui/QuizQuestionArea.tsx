@@ -31,29 +31,31 @@ function MultipleChoiceAnswer({
 
   return (
     <fieldset className="quiz-choice-list">
-      <legend className="sr-only">답안 선택</legend>
-      {question.choices.map((choice) => {
-        const checked = answer === choice.choiceId
+      <legend className="quiz-answer-label">보기에서 답을 선택해 주세요</legend>
+      <div className="quiz-choice-options">
+        {question.choices.map((choice) => {
+          const checked = answer === choice.choiceId
 
-        return (
-          <label className={`quiz-choice ${checked ? 'quiz-choice-selected' : ''}`} key={choice.choiceId}>
-            <input
-              checked={checked}
-              name={`question-${question.questionId}`}
-              onChange={() => onChange(choice.choiceId)}
-              type="radio"
-              value={choice.choiceId}
-            />
-            <span aria-hidden="true" className="quiz-choice-index">
-              {String.fromCharCode(64 + choice.orderNo)}
-            </span>
-            <span className="quiz-choice-text">{choice.choiceText}</span>
-            <span aria-hidden="true" className="quiz-choice-check">
-              ✓
-            </span>
-          </label>
-        )
-      })}
+          return (
+            <label className={`quiz-choice ${checked ? 'quiz-choice-selected' : ''}`} key={choice.choiceId}>
+              <input
+                checked={checked}
+                name={`question-${question.questionId}`}
+                onChange={() => onChange(choice.choiceId)}
+                type="radio"
+                value={choice.choiceId}
+              />
+              <span aria-hidden="true" className="quiz-choice-index">
+                {String.fromCharCode(64 + choice.orderNo)}
+              </span>
+              <span className="quiz-choice-text">{choice.choiceText}</span>
+              <span aria-hidden="true" className="quiz-choice-check">
+                ✓
+              </span>
+            </label>
+          )
+        })}
+      </div>
     </fieldset>
   )
 }
@@ -95,6 +97,7 @@ function TextAnswer({
 
     return (
       <div>
+        <p className="quiz-answer-label">코드 빈칸 답안</p>
         <div className="quiz-code-editor">
           <div className="quiz-code-block" aria-label="빈칸이 포함된 코드" role="region">
             {question.codeSnippet?.split('\n').map((line, index) => (
@@ -132,6 +135,7 @@ function TextAnswer({
 
   return (
     <div>
+      <p className="quiz-answer-label">주관식 답안</p>
       <label className="sr-only" htmlFor={`answer-${question.questionId}`}>
         주관식 답안
       </label>
@@ -185,12 +189,13 @@ export function QuizQuestionArea({
           </span>
         </div>
       ) : (
-        <div className="quiz-browser-bar" aria-hidden="true">
-          <div className="quiz-browser-controls">
-            <span />
-            <span />
-            <span />
-          </div>
+        <div className="quiz-question-topbar" aria-hidden="true">
+          <span className="quiz-window-controls">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span>READLE QUIZ</span>
         </div>
       )}
       <div className="quiz-question-body">
@@ -220,7 +225,7 @@ export function QuizQuestionArea({
             <span aria-hidden="true">←</span> 이전 문제
           </Button>
           <div className="quiz-question-footer-status">
-            <span>{isAnswered(answer) ? '이 문제에 답했습니다.' : '답안을 입력해 주세요.'}</span>
+            <span>{isAnswered(answer) ? '답변 완료' : '미응답'}</span>
             {isLastQuestion && unansweredCount > 0 && <small>미응답 {unansweredCount}개</small>}
           </div>
           {isLastQuestion ? (

@@ -32,7 +32,7 @@ export function QuizNavigator({
             <li key={item.questionId}>
               <button
                 aria-current={active ? 'step' : undefined}
-                aria-label={`${item.orderNo}번 문제${answered ? ', 답변 완료' : ''}`}
+                aria-label={`${item.orderNo}번 문제${active ? ', 현재 문제' : ''}${answered ? ', 답변 완료' : ', 미응답'}`}
                 className={`quiz-question-link ${active ? 'quiz-question-link-active' : ''} ${
                   answered ? 'quiz-question-link-answered' : ''
                 }`}
@@ -42,7 +42,7 @@ export function QuizNavigator({
                 <span>{String(item.orderNo).padStart(2, '0')}</span>
                 <span>{questionTypeLabel[item.type]}</span>
                 <span aria-hidden="true" className="quiz-question-link-state">
-                  {answered ? '✓' : ''}
+                  {answered ? '✓' : active ? '●' : '○'}
                 </span>
               </button>
             </li>

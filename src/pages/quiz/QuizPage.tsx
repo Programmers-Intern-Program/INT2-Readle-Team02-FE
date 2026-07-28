@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { generatePath, useNavigate, useParams } from 'react-router'
 import {
   fetchQuizAttemptDetail,
@@ -149,6 +149,11 @@ export function QuizPage() {
 
   // fetchQuizAttemptDetail 실패 시 attemptId 보존 — 재시도 시 startQuizAttempt를 건너뛰엄
   const pendingAttemptRef = useRef<{ quizId: number; attemptId: number } | null>(null)
+  // Strict Mode effect 재실행 시 동일 퀴즈의 attempt 생성 요청을 재사용
+  const attemptStartPromiseRef = useRef<{
+    quizId: number
+    promise: ReturnType<typeof startQuizAttempt>
+  } | null>(null)
 
   // quizId 변경 시 이전 퀴즈 로컬 상태 전체 초기화 (렌더링 단계에서 처리)
   // quizId가 유효하지 않을 때는 비교 자체를 건너뜀 (NaN !== NaN으로 무한 루프 방지)
@@ -182,6 +187,10 @@ export function QuizPage() {
   }, [quizId, answers])
 
   useEffect(() => {
+    if (!Number.isFinite(quizId) || quizId <= 0) {
+      return
+    }
+
     let cancelled = false
 
     async function loadQuiz() {
@@ -197,11 +206,21 @@ export function QuizPage() {
         setPhase({ status: 'loading' })
 
         try {
-          const startResult = await startQuizAttempt(quizId)
+          const existingStart = attemptStartPromiseRef.current
+          const startPromise =
+            existingStart?.quizId === quizId
+              ? existingStart.promise
+              : startQuizAttempt(quizId)
+
+          attemptStartPromiseRef.current = { quizId, promise: startPromise }
+          const startResult = await startPromise
           if (cancelled) return
 
           attemptId = startResult.attemptId
         } catch (error: unknown) {
+          if (attemptStartPromiseRef.current?.quizId === quizId) {
+            attemptStartPromiseRef.current = null
+          }
           if (!cancelled) {
             const rawMsg = (error instanceof ApiError || error instanceof Error) ? error.message : null
             const code = error instanceof ApiError ? error.code : null
@@ -346,7 +365,7 @@ export function QuizPage() {
       <header className="quiz-header">
         <div className="min-w-0">
           <h1 className="truncate text-heading font-bold text-text-primary sm:text-title">
-            퀴즈 풀기
+            QUIZ
           </h1>
         </div>
         <div className="quiz-progress-summary">
@@ -357,7 +376,11 @@ export function QuizPage() {
       </header>
 
       <div className="quiz-progress-row mt-6" aria-label={`문제 진행률 ${Math.round(progress)}%`}>
-        <div className="quiz-progress-segments" aria-hidden="true">
+        <div
+          className="quiz-progress-segments"
+          aria-hidden="true"
+          style={{ '--quiz-question-count': questionCount } as CSSProperties}
+        >
           {questions.map((item, index) => (
             <span
               className={index <= currentIndex ? 'quiz-progress-segment-filled' : ''}

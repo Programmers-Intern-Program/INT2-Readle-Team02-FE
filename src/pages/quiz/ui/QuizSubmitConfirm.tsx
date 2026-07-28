@@ -8,6 +8,11 @@ export interface QuizSubmitConfirmProps {
 
 export function QuizSubmitConfirm({ onCancel, onConfirm }: QuizSubmitConfirmProps) {
   const dialogRef = useRef<HTMLElement>(null)
+  const onCancelRef = useRef(onCancel)
+
+  useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -22,7 +27,7 @@ export function QuizSubmitConfirm({ onCancel, onConfirm }: QuizSubmitConfirmProp
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        onCancel()
+        onCancelRef.current()
         return
       }
 
@@ -51,7 +56,7 @@ export function QuizSubmitConfirm({ onCancel, onConfirm }: QuizSubmitConfirmProp
         previouslyFocused.focus()
       }
     }
-  }, [onCancel])
+  }, [])
 
   return (
     <div className="quiz-dialog-backdrop" role="presentation">
