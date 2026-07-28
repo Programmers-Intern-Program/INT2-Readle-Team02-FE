@@ -371,19 +371,19 @@ export function LearningPreparationPage() {
     void navigate(destination)
   }
 
-  // 퀴즈 생성이 진행 중이라는 에러(409)를 받으면 3초 간격으로 폴링 자동 재시도 (최대 20회)
+  // 퀴즈 생성이 진행 중이라는 에러(409)를 받으면 5초 간격으로 폴링 자동 재시도 (최대 12회)
   useEffect(() => {
     if (createQuizMutation.isError && isGenerationInProgressError && !isPollingTimeout) {
       const timer = window.setTimeout(() => {
         const next = pollingAttemptRef.current + 1
         pollingAttemptRef.current = next
-        if (next >= 20) {
+        if (next >= 12) {
           setIsPollingTimeout(true)
           return
         }
         createQuizMutation.reset()
         createQuizMutation.mutate({ sourceValidationId: contentId })
-      }, 3000)
+      }, 5000)
       return () => window.clearTimeout(timer)
     }
   }, [createQuizMutation.isError, isGenerationInProgressError, isPollingTimeout, createQuizMutation, contentId])
