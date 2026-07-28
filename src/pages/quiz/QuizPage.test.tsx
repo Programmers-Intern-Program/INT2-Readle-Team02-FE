@@ -86,6 +86,9 @@ describe('QuizPage', () => {
     renderQuizPage('1', true)
 
     expect(await screen.findByText('Test MCQ')).toBeInTheDocument()
+    expect(
+      screen.getByText('답안은 임시 저장될 수 있지만, 제출하지 않은 퀴즈는 학습 기록에 표시되지 않습니다.'),
+    ).toBeInTheDocument()
     expect(startQuizAttempt).toHaveBeenCalledTimes(1)
   })
 

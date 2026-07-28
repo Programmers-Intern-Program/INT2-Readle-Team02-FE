@@ -49,6 +49,9 @@ export function QuizNavigator({
           )
         })}
       </ol>
+      <p className="quiz-record-notice">
+        답안은 임시 저장될 수 있지만, 제출하지 않은 퀴즈는 학습 기록에 표시되지 않습니다.
+      </p>
     </aside>
   )
 }
