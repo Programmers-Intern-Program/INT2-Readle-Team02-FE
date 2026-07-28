@@ -23,16 +23,25 @@ function parseTagId(value: string | null) {
 }
 
 function HistoryRecordCard({ record }: { record: HistoryRecord }) {
+  const accuracyRate = Math.round(Math.min(100, Math.max(0, record.accuracyRate)))
+  const performanceLevel = accuracyRate >= 80 ? 'high' : accuracyRate >= 50 ? 'medium' : 'low'
+
   return (
     <li>
       <Link
-        className="history-record"
+        className={`history-record history-record-${performanceLevel}`}
         to={generatePath(ROUTES.resultReport, { reportId: String(record.reportId) })}
       >
         <div className="history-record-main">
           <div className="history-record-meta">
-            <time dateTime={record.completedAt}>{formatHistoryDate(record.completedAt)}</time>
-            <span>{formatHistoryDuration(record.solveDurationSeconds)}</span>
+            <time dateTime={record.completedAt}>
+              <span aria-hidden="true">●</span>
+              {formatHistoryDate(record.completedAt)}
+            </time>
+            <span>
+              <span aria-hidden="true">◷</span>
+              {formatHistoryDuration(record.solveDurationSeconds)}
+            </span>
           </div>
           <h2>{record.title}</h2>
           <div aria-label="학습 태그" className="history-record-tags">
@@ -43,10 +52,10 @@ function HistoryRecordCard({ record }: { record: HistoryRecord }) {
           aria-label={`${record.totalCount}문제 중 ${record.correctCount}문제 정답`}
           className="history-record-score"
         >
-          <strong>{record.correctCount}/{record.totalCount}</strong>
+          <strong>{record.correctCount} / {record.totalCount}</strong>
           <span>문제 정답</span>
         </div>
-        <span aria-hidden="true" className="history-record-arrow">→</span>
+        <span aria-hidden="true" className="history-record-arrow">›</span>
       </Link>
     </li>
   )
@@ -73,7 +82,7 @@ export function HistoryPage() {
   }
 
   return (
-    <div className="history-page py-8 sm:py-12 lg:py-14">
+    <div className="history-page py-6 sm:py-8 lg:py-10">
       <PageHeading
         description="완료한 퀴즈와 문제별 학습 결과를 다시 확인해 보세요."
         eyebrow="LEARNING HISTORY"

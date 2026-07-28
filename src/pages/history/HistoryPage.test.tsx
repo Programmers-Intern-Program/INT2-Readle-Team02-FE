@@ -82,6 +82,7 @@ describe('HistoryPage', () => {
 
     expect(screen.getByText('Spring 트랜잭션 학습')).toBeInTheDocument()
     expect(screen.getByText('2분 5초')).toBeInTheDocument()
+    expect(screen.getByText('4 / 5')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Spring 트랜잭션 학습/ })).toHaveAttribute(
       'href',
       '/result-reports/701',
