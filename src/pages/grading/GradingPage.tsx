@@ -127,7 +127,8 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
             ? fetchQuizAttemptResult(attemptId).catch((error: unknown) => {
                 if (
                   error instanceof ApiError &&
-                  (error.status === 409 ||
+                  (error.code === 'ATTEMPT_NOT_SUBMITTED' ||
+                    error.status === 409 ||
                     error.code === 'RESULT_NOT_READY' ||
                     error.code === 'GRADING_IN_PROGRESS')
                 ) {
