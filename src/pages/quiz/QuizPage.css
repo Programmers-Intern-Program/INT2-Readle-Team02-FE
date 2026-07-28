@@ -73,13 +73,13 @@
 .quiz-progress-segments {
   display: grid;
   flex: 1;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--quiz-question-count), minmax(0, 1fr));
   gap: 0.35rem;
 }
 
 .quiz-progress-segments span {
-  height: 0.42rem;
-  border-radius: 0.12rem;
+  height: 0.58rem;
+  border-radius: 0.18rem;
   background: var(--color-border-default);
   transition:
     background-color 220ms ease,
@@ -101,7 +101,7 @@
 
 .quiz-workspace {
   display: grid;
-  grid-template-columns: 13.5rem minmax(0, 1fr);
+  grid-template-columns: 15.5rem minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
 }
@@ -126,9 +126,9 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--color-border-glass);
-  padding: 0.9rem 1rem;
+  padding: 1.05rem 1.1rem;
   color: var(--color-text-secondary);
-  font-size: var(--text-caption);
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -140,7 +140,7 @@
 
 .quiz-question-list {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.45rem;
   margin: 0;
   padding: 0.75rem;
   list-style: none;
@@ -150,15 +150,15 @@
   display: grid;
   grid-template-columns: 2rem 1fr 1rem;
   width: 100%;
-  min-height: 2.75rem;
+  min-height: 3.2rem;
   align-items: center;
   gap: 0.5rem;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
-  padding: 0 0.65rem;
+  padding: 0 0.8rem;
   background: transparent;
   color: var(--color-text-muted);
-  font-size: var(--text-caption);
+  font-size: 0.75rem;
   text-align: left;
   cursor: pointer;
   transition:
@@ -188,8 +188,24 @@
   color: var(--color-text-primary);
 }
 
+.quiz-question-link-state {
+  display: grid;
+  width: 1rem;
+  height: 1rem;
+  place-items: center;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.quiz-question-link-active .quiz-question-link-state {
+  color: var(--color-brand-400);
+  filter: drop-shadow(0 0 0.35rem rgb(76 131 255 / 0.55));
+}
+
 .quiz-question-link-answered .quiz-question-link-state {
   color: var(--color-status-success);
+  filter: drop-shadow(0 0 0.35rem rgb(52 211 153 / 0.28));
 }
 
 .quiz-question-card {
@@ -197,33 +213,55 @@
   overflow: hidden;
 }
 
-.quiz-browser-bar {
-  display: flex;
+.quiz-question-topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   min-height: 2.9rem;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   border-bottom: 1px solid var(--color-border-glass);
   padding: 0 1rem;
-  background: rgb(11 16 24 / 0.78);
+  background:
+    linear-gradient(90deg, rgb(76 131 255 / 0.08), transparent 42%),
+    rgb(11 16 24 / 0.78);
+  color: var(--color-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
 }
 
-.quiz-browser-controls {
+.quiz-question-topbar span:first-child {
+  justify-self: start;
+}
+
+.quiz-question-topbar > span:last-child {
+  color: var(--color-brand-400);
+  justify-self: center;
+}
+
+.quiz-window-controls {
   display: flex;
   gap: 0.38rem;
 }
 
-.quiz-browser-controls span {
-  width: 0.58rem;
-  height: 0.58rem;
+.quiz-window-controls i {
+  width: 0.55rem;
+  height: 0.55rem;
   border-radius: 50%;
-  background: #fb7185;
+  background: #ff6b6b;
+  box-shadow: 0 0 0.45rem rgb(255 107 107 / 0.18);
 }
 
-.quiz-browser-controls span:nth-child(2) {
+.quiz-window-controls i:nth-child(2) {
   background: #fbbf24;
+  box-shadow: 0 0 0.45rem rgb(251 191 36 / 0.18);
 }
 
-.quiz-browser-controls span:nth-child(3) {
+.quiz-window-controls i:nth-child(3) {
   background: #34d399;
+  box-shadow: 0 0 0.45rem rgb(52 211 153 / 0.18);
 }
 
 .quiz-question-body {
@@ -254,20 +292,35 @@
   max-width: 52rem;
   margin: 1.5rem 0 0;
   color: var(--color-text-primary);
-  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
-  line-height: 1.55;
+  font-size: clamp(1.35rem, 2.6vw, 1.8rem);
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  line-height: 1.5;
 }
 
 .quiz-answer-area {
-  margin-top: 2rem;
+  margin-top: 2.25rem;
+  border-top: 1px solid var(--color-border-glass);
+  padding-top: 1.5rem;
 }
 
 .quiz-choice-list {
-  display: grid;
-  gap: 0.75rem;
   margin: 0;
   border: 0;
   padding: 0;
+}
+
+.quiz-answer-label {
+  display: block;
+  margin: 0 0 0.75rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.quiz-choice-options {
+  display: grid;
+  gap: 0.75rem;
 }
 
 .quiz-choice {
@@ -327,10 +380,13 @@
 }
 
 .quiz-choice-selected {
-  border-color: rgb(107 150 255 / 0.62);
-  background: rgb(76 131 255 / 0.1);
+  border-color: rgb(107 150 255 / 0.78);
+  background:
+    linear-gradient(90deg, rgb(76 131 255 / 0.16), rgb(76 131 255 / 0.06));
   color: var(--color-text-primary);
-  box-shadow: 0 0 0 0.2rem rgb(76 131 255 / 0.05);
+  box-shadow:
+    0 0 0 0.2rem rgb(76 131 255 / 0.06),
+    0 0.8rem 2rem rgb(0 0 0 / 0.14);
 }
 
 .quiz-choice-selected .quiz-choice-index {
@@ -345,21 +401,18 @@
 
 .quiz-short-answer {
   width: 100%;
+  min-height: 9rem;
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-control);
   outline: 0;
+  resize: vertical;
+  padding: 1rem;
   background: rgb(11 16 24 / 0.55);
   color: var(--color-text-primary);
+  line-height: 1.65;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease;
-}
-
-.quiz-short-answer {
-  min-height: 9rem;
-  resize: vertical;
-  padding: 1rem;
-  line-height: 1.65;
 }
 
 .quiz-short-answer:focus {
@@ -499,8 +552,10 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 1rem;
+  width: min(38rem, 100%);
+  gap: 1.5rem;
   margin-top: 2.5rem;
+  margin-inline: auto;
   border-top: 1px solid var(--color-border-glass);
   padding-top: 1.25rem;
 }
@@ -603,17 +658,8 @@
     display: none;
   }
 
-  .quiz-browser-bar {
+  .quiz-question-topbar {
     padding: 0 0.75rem;
-  }
-
-  .quiz-browser-controls {
-    gap: 0.25rem;
-  }
-
-  .quiz-browser-controls span {
-    width: 0.45rem;
-    height: 0.45rem;
   }
 
   .quiz-question-body {

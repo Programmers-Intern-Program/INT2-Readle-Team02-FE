@@ -294,6 +294,6 @@ describe('LearningPreparationPage', () => {
 
     expect(screen.getByText('퀴즈 생성에 실패했습니다')).toBeInTheDocument()
     expect(screen.getByText('본문 내용이 유효하지 않아 퀴즈를 생성할 수 없습니다.')).toBeInTheDocument()
-    expect(screen.getByText('퀴즈 생성 재시도')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '입력 화면으로 돌아가기' })).toBeInTheDocument()
   })
 })
