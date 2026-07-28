@@ -547,17 +547,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .preparation-live-dot,
-  .preparation-progress-track span,
-  .preparation-stage,
-  .preparation-back-link,
-  .preparation-notice-animate {
-    animation: none;
-    transition: none;
-  }
-}
-
 .preparation-notice-animate {
   display: inline-flex;
   align-items: center;
@@ -575,5 +564,16 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preparation-live-dot,
+  .preparation-progress-track span,
+  .preparation-stage,
+  .preparation-back-link,
+  .preparation-notice-animate {
+    animation: none;
+    transition: none;
   }
 }

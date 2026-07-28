@@ -223,9 +223,11 @@ export function LearningPreparationPage() {
       const timer = window.setInterval(() => {
         setGeneratingNoticeIndex((prev) => (prev + 1) % quizGenerationNotices.length)
       }, 2000)
-      return () => window.clearInterval(timer)
+      return () => {
+        window.clearInterval(timer)
+        setGeneratingNoticeIndex(0)
+      }
     }
-    setGeneratingNoticeIndex(0)
   }, [activeStage, createQuizMutation.isSuccess, createQuizMutation.isError])
 
   const generatingNotice = quizGenerationNotices[generatingNoticeIndex]
