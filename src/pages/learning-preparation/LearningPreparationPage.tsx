@@ -162,16 +162,38 @@ export function LearningPreparationPage() {
   const complete = activeStage >= preparationSteps.length
   const progress = complete ? 100 : Math.round(((activeStage + 0.35) / preparationSteps.length) * 100)
 
-  // 상태 분류: 검증 반려(REJECTED), 검증 실패(FAILED), 검증 API 조회 오류, 퀴즈 생성 실패를 분리
+  const pollingAttemptRef = useRef(0)
+  const [isPollingTimeout, setIsPollingTimeout] = useState(false)
+
   const isRejected = validationStatus === 'REJECTED'
   const isFailed = validationStatus === 'FAILED'
-  const isQuizCreateError = createQuizMutation.isError
+  const isGenerationInProgressError = createQuizMutation.error?.code === 'QUIZ_GENERATION_IN_PROGRESS'
+  const isQuizCreateError = createQuizMutation.isError && (!isGenerationInProgressError || isPollingTimeout)
   const bypassAvailable = validationResponse?.bypassAvailable ?? false
 
   const hasPipelineError = isRejected || isFailed || isValidationError || isQuizCreateError
 
+  // 퀴즈 생성이 진행 중이라는 에러(409)를 받으면 3초 간격으로 폴링 자동 재시도 (최대 20회)
+  useEffect(() => {
+    if (createQuizMutation.isError && isGenerationInProgressError && !isPollingTimeout) {
+      const timer = window.setTimeout(() => {
+        const next = pollingAttemptRef.current + 1
+        pollingAttemptRef.current = next
+        if (next >= 20) {
+          setIsPollingTimeout(true)
+          return
+        }
+        createQuizMutation.reset()
+        createQuizMutation.mutate({ sourceValidationId: contentId })
+      }, 3000)
+      return () => window.clearTimeout(timer)
+    }
+  }, [createQuizMutation.isError, isGenerationInProgressError, isPollingTimeout, createQuizMutation, contentId])
+
   const errorMessage = isQuizCreateError
-    ? (sanitizeErrorMessage(createQuizMutation.error?.message, createQuizMutation.error?.code) || 'AI 퀴즈 생성 처리 중 응답이 지연되었습니다. 잠시 후 다시 시도해 주세요.')
+    ? (isPollingTimeout 
+        ? '서버 응답이 지연되어 퀴즈 생성을 중단했습니다. 잠시 후 다시 시도해 주세요.' 
+        : (sanitizeErrorMessage(createQuizMutation.error?.message, createQuizMutation.error?.code) || 'AI 퀴즈 생성 처리 중 응답이 지연되었습니다. 잠시 후 다시 시도해 주세요.'))
     : isValidationError
       ? (sanitizeErrorMessage(useValidationPollingError?.message, useValidationPollingError?.code) || '네트워크 연결이 불안정하여 콘텐츠 검증 상태를 확인하지 못했습니다.')
       : (sanitizeErrorMessage(validationResponse?.message, validationResponse?.errorCode) || (isFailed ? '콘텐츠 검증 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' : '개발 및 학습에 적합하지 않은 콘텐츠로 판정되었습니다.'))
@@ -183,6 +205,8 @@ export function LearningPreparationPage() {
   }
 
   const handleRetryQuiz = () => {
+    pollingAttemptRef.current = 0
+    setIsPollingTimeout(false)
     createQuizMutation.reset()
     createQuizMutation.mutate({ sourceValidationId: contentId })
   }
