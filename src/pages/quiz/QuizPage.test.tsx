@@ -86,6 +86,18 @@ describe('QuizPage', () => {
     renderQuizPage('1', true)
 
     expect(await screen.findByText('Test MCQ')).toBeInTheDocument()
+    expect(
+      screen.getByText('답안은 임시 저장될 수 있지만, 제출하지 않은 퀴즈는 학습 기록에 표시되지 않습니다.'),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '학습 기록 안내 접기' }))
+    expect(
+      screen.queryByText('답안은 임시 저장될 수 있지만, 제출하지 않은 퀴즈는 학습 기록에 표시되지 않습니다.'),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '학습 기록 안내 펼치기' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    expect(screen.getByText('문제 목록')).toBeInTheDocument()
     expect(startQuizAttempt).toHaveBeenCalledTimes(1)
   })
 
