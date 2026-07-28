@@ -10,7 +10,7 @@ import '@/pages/grading/GradingPage.css'
 type GradingStatus = 'running' | 'success' | 'error'
 
 const gradingSteps = [
-  { description: '제출한 5개 답안의 형식을 확인합니다.', label: '답안 확인' },
+  { description: '제출한 답안의 형식을 확인합니다.', label: '답안 확인' },
   { description: '선택한 답안을 기준으로 자동 채점합니다.', label: '객관식 채점' },
   { description: '답변의 의미와 핵심 개념을 분석합니다.', label: '주관식 AI 평가' },
   { description: '코드 문맥과 빈칸 답안을 함께 확인합니다.', label: '코드 답안 평가' },
@@ -41,14 +41,16 @@ function isValidSubmitRequest(data: unknown): data is QuizSubmitRequest {
 export function GradingPage() {
   const { attemptId = '' } = useParams<{ attemptId: string }>()
   const parsedAttemptId = Number(attemptId)
+  const isValidAttemptId = /^\d+$/.test(attemptId) && Number.isSafeInteger(parsedAttemptId) && parsedAttemptId > 0
 
-  if (!Number.isFinite(parsedAttemptId) || parsedAttemptId <= 0) {
+  if (!isValidAttemptId) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center py-8 sm:py-10 lg:py-12" role="alert">
         <div className="flex max-w-[26rem] flex-col items-center gap-4 rounded-2xl border border-rose-400/20 bg-rose-950/40 px-8 py-10 text-center">
           <span className="text-3xl text-rose-500" aria-hidden="true">⚠</span>
           <h1 className="m-0 text-xl font-bold text-white">잘못된 접근입니다</h1>
           <p className="m-0 text-sm leading-relaxed text-slate-300">올바른 경로로 다시 접속해 주세요.</p>
+          <Link className="grading-invalid-link" to={ROUTES.home}>새 퀴즈 만들기</Link>
         </div>
       </div>
     )
@@ -91,6 +93,7 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
   const shouldFailFirstAttempt =
     import.meta.env.DEV && searchParams.get('mock') === 'failed'
   const progress = status === 'success' ? 100 : Math.round(((activeStage + 1) / gradingSteps.length) * 100)
+  const displayedStep = status === 'success' ? gradingSteps.length : activeStage + 1
   const resultPath = reportId ? generatePath(ROUTES.resultReport, { reportId: String(reportId) }) : ''
 
   // StrictMode에서 마운트가 해제되었다가 다시 마운트되더라도, 
@@ -116,11 +119,25 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
 
       try {
         if (requestPromiseRef.current?.key !== currentKey) {
-          requestPromiseRef.current = {
-            key: currentKey,
-            promise: submitRequest
+          const request = attemptNumber > 0 && submitRequest
+            ? fetchQuizAttemptResult(attemptId).catch((error: unknown) => {
+                if (
+                  error instanceof ApiError &&
+                  (error.status === 409 ||
+                    error.code === 'RESULT_NOT_READY' ||
+                    error.code === 'GRADING_IN_PROGRESS')
+                ) {
+                  return submitQuizAttempt(attemptId, submitRequest)
+                }
+                throw error
+              })
+            : submitRequest
               ? submitQuizAttempt(attemptId, submitRequest)
               : fetchQuizAttemptResult(attemptId)
+
+          requestPromiseRef.current = {
+            key: currentKey,
+            promise: request,
           }
         }
         
@@ -203,6 +220,7 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
 
   function retryGrading() {
     setActiveStage(0)
+    setErrorMessage(null)
     setStatus('running')
     setAttemptNumber((current) => current + 1)
   }
@@ -244,8 +262,8 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
               style={{ '--grading-progress': `${progress * 3.6}deg` } as CSSProperties}
             >
               <div className="grading-progress-ring-inner">
-                <strong>{progress}%</strong>
-                <span>{status === 'success' ? '완료' : status === 'error' ? '중단됨' : '처리 중'}</span>
+                <strong>{displayedStep} / {gradingSteps.length}</strong>
+                <span>{status === 'success' ? '채점 완료' : status === 'error' ? '채점 중단' : '채점 진행 중'}</span>
               </div>
             </div>
             <p aria-live="polite" className="grading-current-message">
@@ -288,8 +306,8 @@ function GradingFlow({ attemptId }: GradingFlowProps) {
           {status === 'error' && (
             <>
               <div>
-                <strong>답안은 안전하게 보존되어 있습니다.</strong>
-                <p>같은 제출 건으로 채점을 다시 요청합니다.</p>
+                <strong>제출 결과를 다시 확인할 수 있습니다.</strong>
+                <p>완료된 결과를 먼저 확인한 뒤 필요한 경우에만 채점을 다시 요청합니다.</p>
               </div>
               <Button onClick={retryGrading}>다시 시도하기</Button>
             </>

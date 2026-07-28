@@ -8,12 +8,17 @@ import {
 } from '@/pages/result-report/model/resultReport'
 import { questionTypeLabel } from '@/pages/quiz/model/quiz'
 import { ROUTES } from '@/shared/config/routes'
-import { ErrorMessage, Loading } from '@/shared/ui'
+import { Button, ErrorMessage, Loading } from '@/shared/ui'
 import { sanitizeErrorMessage } from '@/shared/api/error'
+import { isPositiveIntegerId } from '@/shared/utils/id'
 import { useResultReportDetail } from '@/pages/result-report/api/useResultReportDetail'
 import '@/pages/result-report/ResultReportPage.css'
 
 function QuestionResultItem({ result }: { result: QuestionResult }) {
+  const submittedAnswer = result.submittedAnswer.trim()
+    ? result.submittedAnswer
+    : '응답하지 않은 문제입니다.'
+
   return (
     <details className={`result-question ${result.isCorrect ? 'result-question-correct' : 'result-question-incorrect'}`}>
       <summary>
@@ -32,13 +37,13 @@ function QuestionResultItem({ result }: { result: QuestionResult }) {
         <section aria-labelledby={`answer-title-${result.questionId}`} className="result-answer-panel">
           <h3 id={`answer-title-${result.questionId}`}>내가 제출한 답안</h3>
           {result.questionType === 'code_blank'
-            ? <code>{result.submittedAnswer}</code>
+            ? <code>{submittedAnswer}</code>
             : (
               <p>
-                {result.questionType === 'multiple_choice' && result.submittedChoiceNo
+                {result.questionType === 'multiple_choice' && result.submittedChoiceNo != null
                   ? `${result.submittedChoiceNo}번. `
                   : ''}
-                {result.submittedAnswer}
+                {submittedAnswer}
               </p>
             )}
         </section>
@@ -77,8 +82,23 @@ function ReportLoadingState() {
   )
 }
 
-function ReportErrorState({ state, error }: { state: 'not-ready' | 'not-found' | 'forbidden' | 'unknown-error'; error?: { code?: string; message?: string } | null }) {
+function ReportErrorState({
+  state,
+  error,
+  onRetry,
+  retrying = false,
+}: {
+  state: 'invalid' | 'not-ready' | 'not-found' | 'forbidden' | 'unknown-error'
+  error?: { code?: string; message?: string } | null
+  onRetry?: () => void
+  retrying?: boolean
+}) {
   const content = {
+    invalid: {
+      code: 'INVALID_REPORT_ID',
+      title: '잘못된 접근입니다',
+      description: '올바른 결과 리포트 경로로 다시 접속해 주세요.',
+    },
     'not-ready': {
       code: 'REPORT_NOT_READY',
       title: '결과 리포트를 준비하고 있습니다',
@@ -106,15 +126,22 @@ function ReportErrorState({ state, error }: { state: 'not-ready' | 'not-found' |
       <ErrorMessage>{content.code}</ErrorMessage>
       <h1>{content.title}</h1>
       <p>{content.description}</p>
-      <Link className="result-state-link" to={ROUTES.dashboard}>학습 현황으로 이동</Link>
+      <div className="result-state-actions">
+        {onRetry && (
+          <Button loading={retrying} onClick={onRetry}>다시 시도</Button>
+        )}
+        <Link className="result-state-link" to={ROUTES.dashboard}>학습 현황으로 이동</Link>
+      </div>
     </section>
   )
 }
 
 export function ResultReportPage() {
   const { reportId = '' } = useParams<{ reportId: string }>()
-  const { data: report, isLoading, error } = useResultReportDetail(reportId)
+  const isValidReportId = isPositiveIntegerId(reportId)
+  const { data: report, isLoading, isFetching, error, refetch } = useResultReportDetail(reportId)
 
+  if (!isValidReportId) return <ReportErrorState state="invalid" />
   if (isLoading) return <ReportLoadingState />
   
   if (error || !report) {
@@ -123,11 +150,21 @@ export function ResultReportPage() {
     else if (error?.status === 403) state = 'forbidden'
     else if (!error && !report) state = 'not-ready'
     
-    return <ReportErrorState error={error} state={state} />
+    const canRetry = state === 'not-ready' || state === 'unknown-error'
+    return (
+      <ReportErrorState
+        error={error}
+        onRetry={canRetry ? () => void refetch() : undefined}
+        retrying={isFetching}
+        state={state}
+      />
+    )
   }
-  const incorrectCount = report.totalCount - report.correctCount
-  const scoreStyle = { '--result-score': `${report.accuracyRate * 3.6}deg` } as CSSProperties
+  const accuracyRate = Math.min(100, Math.max(0, report.accuracyRate))
+  const incorrectCount = Math.max(0, report.totalCount - report.correctCount)
+  const scoreStyle = { '--result-score': `${accuracyRate * 3.6}deg` } as CSSProperties
   const sourceUrl = getSafeSourceUrl(report.sourceUrl)
+  const sourceHost = sourceUrl ? new URL(sourceUrl).hostname.replace(/^www\./, '') : ''
 
   return (
     <div className="result-page py-8 sm:py-12 lg:py-16">
@@ -147,25 +184,34 @@ export function ResultReportPage() {
               rel="noopener noreferrer"
               target="_blank"
             >
-              원본 아티클 보기
-              <span aria-hidden="true">↗</span>
+              <span className="result-source-icon" aria-hidden="true">↗</span>
+              <span>
+                <strong>원본 아티클 보기</strong>
+                <small>{sourceHost}</small>
+              </span>
             </a>
           )}
         </div>
 
-        <div aria-label={`정답률 ${report.accuracyRate}%`} className="result-score-ring" style={scoreStyle}>
-          <div>
-            <strong>{report.accuracyRate}</strong>
-            <span>%</span>
-            <small>정답률</small>
+        <aside className="result-performance-card" aria-label="전체 학습 성과">
+          <div aria-label={`정답률 ${accuracyRate}%`} className="result-score-ring" style={scoreStyle}>
+            <div>
+              <strong>{accuracyRate}</strong>
+              <span>%</span>
+              <small>정답률</small>
+            </div>
           </div>
-        </div>
+          <div className="result-score-counts">
+            <span><small>정답</small><strong>{report.correctCount}</strong></span>
+            <span><small>오답</small><strong>{incorrectCount}</strong></span>
+          </div>
+        </aside>
       </header>
 
       <section aria-label="학습 결과 요약" className="result-summary-bar">
         <article>
-          <span>정답</span>
-          <strong>{report.correctCount} / {report.totalCount}</strong>
+          <span>전체 문제</span>
+          <strong>{report.totalCount}문제</strong>
         </article>
         <article>
           <span>풀이 시간</span>
@@ -187,9 +233,13 @@ export function ResultReportPage() {
         </div>
 
         <div className="result-question-list">
-          {report.results.map((result) => (
-            <QuestionResultItem key={result.questionId} result={result} />
-          ))}
+          {report.results.length > 0 ? (
+            report.results.map((result) => (
+              <QuestionResultItem key={result.questionId} result={result} />
+            ))
+          ) : (
+            <p className="result-empty-questions">표시할 문제별 결과가 없습니다.</p>
+          )}
         </div>
       </section>
 

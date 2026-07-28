@@ -1,19 +1,50 @@
 // @vitest-environment jsdom
 import { StrictMode } from 'react'
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GradingPage } from '@/pages/grading/GradingPage'
-import { submitQuizAttempt } from '@/pages/quiz/api/quiz'
+import { fetchQuizAttemptResult, submitQuizAttempt } from '@/pages/quiz/api/quiz'
+import { ApiError } from '@/shared/api/error'
 
 vi.mock('@/pages/quiz/api/quiz')
 
 describe('GradingPage', () => {
   afterEach(() => {
     cleanup()
+    vi.clearAllMocks()
     vi.useRealTimers()
+  })
+
+  it('잘못된 attemptId에서는 복구 CTA를 제공하고 API를 호출하지 않는다', () => {
+    render(
+      <MemoryRouter initialEntries={['/quizzes/attempts/invalid/grading']}>
+        <Routes>
+          <Route path="/quizzes/attempts/:attemptId/grading" element={<GradingPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent('잘못된 접근입니다')
+    expect(screen.getByRole('link', { name: '새 퀴즈 만들기' })).toHaveAttribute('href', '/learn')
+    expect(submitQuizAttempt).not.toHaveBeenCalled()
+    expect(fetchQuizAttemptResult).not.toHaveBeenCalled()
+  })
+
+  it('정수가 아닌 attemptId에서는 API를 호출하지 않는다', () => {
+    render(
+      <MemoryRouter initialEntries={['/quizzes/attempts/1.5/grading']}>
+        <Routes>
+          <Route path="/quizzes/attempts/:attemptId/grading" element={<GradingPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent('잘못된 접근입니다')
+    expect(submitQuizAttempt).not.toHaveBeenCalled()
+    expect(fetchQuizAttemptResult).not.toHaveBeenCalled()
   })
 
   it('채점 진행 상태와 처리 단계를 렌더링한다', () => {
@@ -149,6 +180,47 @@ describe('GradingPage', () => {
     expect(submitQuizAttempt).toHaveBeenCalledTimes(1)
     
     // 타이머와 effect 재실행 흐름이 정상적으로 이어져서 최종 성공 화면(결과 리포트 보기 링크)까지 도달함을 단언
+    expect(screen.getByRole('link', { name: /결과 리포트 보기/ })).toHaveAttribute(
+      'href',
+      '/result-reports/701',
+    )
+  })
+
+  it('재시도 시 완료된 결과를 먼저 조회하고 중복 제출하지 않는다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(submitQuizAttempt).mockRejectedValueOnce(
+      new ApiError({ status: 500, code: 'AI_GRADING_FAILED', message: '채점에 실패했습니다.' }),
+    )
+    vi.mocked(fetchQuizAttemptResult).mockResolvedValueOnce({
+      reportId: 701,
+      attemptId: 99,
+      gradingStatus: 'completed',
+      accuracyRate: 100,
+      correctCount: 2,
+      totalCount: 2,
+      solveDurationSeconds: 120,
+      completedAt: new Date().toISOString(),
+      results: [],
+    })
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/quizzes/attempts/99/grading', state: { submitRequest: { answers: [] } } }]}>
+        <Routes>
+          <Route path="/quizzes/attempts/:attemptId/grading" element={<GradingPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await act(async () => {
+      vi.advanceTimersByTime(10000)
+    })
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도하기' }))
+    await act(async () => {
+      vi.advanceTimersByTime(10000)
+    })
+
+    expect(fetchQuizAttemptResult).toHaveBeenCalledTimes(1)
+    expect(submitQuizAttempt).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('link', { name: /결과 리포트 보기/ })).toHaveAttribute(
       'href',
       '/result-reports/701',
