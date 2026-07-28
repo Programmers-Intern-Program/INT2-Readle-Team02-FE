@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { isAnswered, questionTypeLabel, type QuizAnswers, type QuizQuestion } from '@/pages/quiz/model/quiz'
 
 export interface QuizNavigatorProps {
@@ -15,6 +16,8 @@ export function QuizNavigator({
   answeredCount,
   moveToQuestion,
 }: QuizNavigatorProps) {
+  const [isNoticeVisible, setIsNoticeVisible] = useState(true)
+
   return (
     <aside className="quiz-navigator" aria-label="문제 바로가기">
       <div className="quiz-navigator-heading">
@@ -49,9 +52,21 @@ export function QuizNavigator({
           )
         })}
       </ol>
-      <p className="quiz-record-notice">
-        답안은 임시 저장될 수 있지만, 제출하지 않은 퀴즈는 학습 기록에 표시되지 않습니다.
-      </p>
+      <div className={`quiz-record-notice ${isNoticeVisible ? '' : 'quiz-record-notice-collapsed'}`}>
+        {isNoticeVisible && (
+          <p>답안은 임시 저장될 수 있지만, 제출하지 않은 퀴즈는 학습 기록에 표시되지 않습니다.</p>
+        )}
+        <button
+          aria-expanded={isNoticeVisible}
+          aria-label={isNoticeVisible ? '학습 기록 안내 접기' : '학습 기록 안내 펼치기'}
+          className="quiz-record-notice-toggle"
+          onClick={() => setIsNoticeVisible((visible) => !visible)}
+          type="button"
+        >
+          {!isNoticeVisible && <span className="quiz-record-notice-label">안내 보기</span>}
+          <span aria-hidden="true">{isNoticeVisible ? '›' : '‹'}</span>
+        </button>
+      </div>
     </aside>
   )
 }
