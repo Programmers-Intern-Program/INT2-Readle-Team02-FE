@@ -37,7 +37,14 @@ function QuestionResultItem({ result }: { result: QuestionResult }) {
           <h3 id={`answer-title-${result.questionId}`}>내가 제출한 답안</h3>
           {result.questionType === 'code_blank'
             ? <code>{submittedAnswer}</code>
-            : <p>{submittedAnswer}</p>}
+            : (
+              <p>
+                {result.questionType === 'multiple_choice' && result.submittedChoiceNo != null
+                  ? `${result.submittedChoiceNo}번. `
+                  : ''}
+                {submittedAnswer}
+              </p>
+            )}
         </section>
 
         {!result.isCorrect && result.questionType === 'multiple_choice' && result.correctChoiceText && (
