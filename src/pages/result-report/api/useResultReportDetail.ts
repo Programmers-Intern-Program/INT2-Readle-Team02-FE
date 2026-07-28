@@ -4,10 +4,12 @@ import type { ResultReport } from '@/pages/result-report/model/resultReport'
 import type { ApiError } from '@/shared/api/error'
 
 export function useResultReportDetail(reportId: string) {
+  const isValidReportId = /^\d+$/.test(reportId) && Number(reportId) > 0
+
   return useQuery<ResultReport, ApiError>({
     queryKey: ['result-report', reportId],
     queryFn: () => getResultReportDetail(reportId),
-    enabled: Boolean(reportId),
+    enabled: isValidReportId,
     staleTime: 5 * 60 * 1000, // 5분
   })
 }

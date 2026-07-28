@@ -19,11 +19,11 @@ import { ApiError } from '@/shared/api/error'
 vi.mock('@/shared/api/report')
 
 afterEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
   cleanup()
 })
 
-function renderPage(reportId = 'mock-report') {
+function renderPage(reportId = '401') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -40,6 +40,13 @@ function renderPage(reportId = 'mock-report') {
 }
 
 describe('ResultReportPage', () => {
+  it('잘못된 reportId에서는 API를 호출하지 않고 복구 화면을 표시한다', () => {
+    renderPage('invalid')
+
+    expect(screen.getByText('잘못된 접근입니다')).toBeInTheDocument()
+    expect(getResultReportDetail).not.toHaveBeenCalled()
+  })
+
   it('학습 결과 요약과 문제별 오답 피드백을 렌더링한다', async () => {
     vi.mocked(getResultReportDetail).mockImplementationOnce(() => 
       new Promise(resolve => setTimeout(() => resolve(mockResultReport), 100))
@@ -92,8 +99,21 @@ describe('ResultReportPage', () => {
 
   it('unknown-error 에러 상태를 렌더링한다', async () => {
     vi.mocked(getResultReportDetail).mockRejectedValueOnce(new Error('Unknown Error'))
-    renderPage('unknown-error')
+    renderPage('500')
     expect(await screen.findByText('일시적인 오류가 발생했습니다')).toBeInTheDocument()
+  })
+
+  it('일시적인 오류는 사용자가 다시 시도할 수 있다', async () => {
+    const user = userEvent.setup()
+    vi.mocked(getResultReportDetail)
+      .mockRejectedValueOnce(new ApiError({ status: 500, code: 'SERVER_ERROR', message: 'Server Error' }))
+      .mockResolvedValueOnce(mockResultReport)
+    renderPage('501')
+
+    await user.click(await screen.findByRole('button', { name: '다시 시도' }))
+
+    expect(await screen.findByText('Spring @Transactional 심층 이해')).toBeInTheDocument()
+    expect(getResultReportDetail).toHaveBeenCalledTimes(2)
   })
 
   it('객관식 문항 오답 시 정답 선택지(번호 및 내용)를 렌더링한다', async () => {
@@ -114,6 +134,29 @@ describe('ResultReportPage', () => {
 
     expect(screen.getByText('정답 선택지')).toBeInTheDocument()
     expect(screen.getByText(/3번\. REQUIRES_NEW/)).toBeInTheDocument()
+  })
+
+  it('주관식 답안과 AI 피드백의 원문 줄바꿈을 보존한다', async () => {
+    const user = userEvent.setup()
+    const multilineAnswer = '  첫 번째 답변입니다.\n두 번째 답변입니다.  '
+    const multilineFeedback = '첫 번째 피드백입니다.\n두 번째 피드백입니다.'
+    vi.mocked(getResultReportDetail).mockResolvedValueOnce({
+      ...mockResultReport,
+      results: [
+        {
+          ...mockResultReport.results[1],
+          submittedAnswer: multilineAnswer,
+          aiFeedback: multilineFeedback,
+        },
+      ],
+    })
+    renderPage('402')
+
+    const question = await screen.findByText(mockResultReport.results[1].questionText)
+    await user.click(question)
+
+    expect(document.querySelector('.result-answer-panel p')?.textContent).toBe(multilineAnswer)
+    expect(document.querySelector('.result-feedback-panel p')?.textContent).toBe(multilineFeedback)
   })
 })
 

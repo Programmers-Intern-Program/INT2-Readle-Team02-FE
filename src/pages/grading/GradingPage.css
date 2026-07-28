@@ -32,10 +32,13 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 2rem;
+  border-bottom: 1px solid var(--color-border-glass);
+  padding: 0.25rem 0.25rem 1.25rem;
 }
 
 .grading-status-badge {
   flex: 0 0 auto;
+  align-self: center;
   border: 1px solid rgb(107 150 255 / 0.28);
   border-radius: 9999px;
   padding: 0.4rem 0.7rem;
@@ -88,16 +91,24 @@
   place-items: center;
   border-radius: 50%;
   background: conic-gradient(var(--color-brand-500) var(--grading-progress), var(--color-border-default) 0);
-  box-shadow: 0 0 2.5rem rgb(76 131 255 / 0.12);
+  box-shadow:
+    0 0 1.5rem rgb(76 131 255 / 0.16),
+    0 0 4.5rem rgb(76 131 255 / 0.12);
   transition: background 450ms ease;
 }
 
 .grading-page-success .grading-progress-ring {
   background: conic-gradient(var(--color-status-success) var(--grading-progress), var(--color-border-default) 0);
+  box-shadow:
+    0 0 1.75rem rgb(52 211 153 / 0.18),
+    0 0 5rem rgb(52 211 153 / 0.12);
 }
 
 .grading-page-error .grading-progress-ring {
   background: conic-gradient(var(--color-status-error) var(--grading-progress), var(--color-border-default) 0);
+  box-shadow:
+    0 0 1.5rem rgb(251 113 133 / 0.14),
+    0 0 4rem rgb(251 113 133 / 0.09);
 }
 
 .grading-progress-ring-inner {
@@ -114,7 +125,7 @@
 .grading-progress-ring-inner strong {
   color: var(--color-text-primary);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 2rem;
+  font-size: 1.75rem;
 }
 
 .grading-progress-ring-inner span {
@@ -213,10 +224,8 @@
 
 .grading-step span span {
   margin-top: 0.15rem;
-  overflow: hidden;
   font-size: 0.6875rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .grading-step small {
@@ -244,7 +253,7 @@
   margin-top: 1rem;
   border: 1px solid var(--color-border-glass);
   border-radius: var(--radius-control);
-  padding: 0.9rem 1rem;
+  padding: 1rem 1.5rem;
   background: rgb(21 27 38 / 0.58);
   color: var(--color-text-muted);
   font-size: var(--text-caption);
@@ -276,6 +285,30 @@
   font-weight: 600;
   text-decoration: none;
   box-shadow: var(--shadow-button);
+}
+
+.grading-invalid-link {
+  display: inline-flex;
+  min-height: var(--spacing-control);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-brand-400);
+  border-radius: var(--radius-control);
+  padding: var(--spacing-control-y) var(--spacing-control-x);
+  background: var(--color-brand-500);
+  color: var(--color-text-on-brand);
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.grading-invalid-link:hover {
+  background: var(--color-brand-600);
+}
+
+.grading-invalid-link:focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 3px;
 }
 
 .grading-result-link:hover {
@@ -330,6 +363,13 @@
 
   .grading-step small {
     grid-column: 2;
+  }
+
+  .grading-step span span {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .grading-footer > button,
