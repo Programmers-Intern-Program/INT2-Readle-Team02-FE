@@ -165,6 +165,7 @@ export function LearningPreparationPage() {
   const isInvalidContentId = !Number.isInteger(contentId) || contentId <= 0
   const [hasAdvancedToGenerate, setHasAdvancedToGenerate] = useState(false)
   const [pendingDestination, setPendingDestination] = useState<string | null>(null)
+  const [isBypassActive, setIsBypassActive] = useState(false)
   const isRoutingRef = useRef(false)
   const hasTriggeredCreateRef = useRef(false)
 
@@ -176,7 +177,7 @@ export function LearningPreparationPage() {
 
   // API 상태에 따라 렌더링 시점에 바로 activeStage 도출 (You might not need an effect)
   let activeStage = 1 // 1: VALIDATE(시작/진행 중)
-  if (validationStatus === 'PASSED') {
+  if (validationStatus === 'PASSED' || isBypassActive) {
     if (createQuizMutation.isSuccess) {
       activeStage = 4 // 모든 단계 완료
     } else {
@@ -247,7 +248,7 @@ export function LearningPreparationPage() {
   const isQuizCreateError = createQuizMutation.isError && (!isGenerationInProgressError || isPollingTimeout)
   const bypassAvailable = validationResponse?.bypassAvailable ?? false
 
-  const hasPipelineError = isInvalidContentId || isRejected || isFailed || isValidationError || isQuizCreateError
+  const hasPipelineError = isInvalidContentId || (isRejected && !isBypassActive) || isFailed || isValidationError || isQuizCreateError
   const shouldWarnBeforeLeaving = !complete && !hasPipelineError && !isInvalidContentId
 
   useEffect(() => {
@@ -358,6 +359,7 @@ export function LearningPreparationPage() {
 
   const handleBypass = () => {
     if (!createQuizMutation.isPending) {
+      setIsBypassActive(true)
       createQuizMutation.mutate({ sourceValidationId: contentId })
     }
   }
