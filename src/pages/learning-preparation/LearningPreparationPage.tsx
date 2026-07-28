@@ -191,6 +191,7 @@ export function LearningPreparationPage() {
     }
   }
 
+  const triggeredSessionKey = `quiz_triggered_${contentId}`
   const createdQuizSessionKey = `created_quiz_${contentId}`
 
   // 새로고침 시 이미 생성 완료된 퀴즈가 있는 경우 바로 풀이 화면으로 라우팅 (POST 중복 재호출 방지)
@@ -208,12 +209,14 @@ export function LearningPreparationPage() {
     }
   }, [contentId, createdQuizSessionKey, navigate])
 
-  // PASSED 시 자동 퀴즈 생성 트리거 (Strict Mode 중복 호출 및 새로고침 재생성 방지 가드)
+  // PASSED 시 자동 퀴즈 생성 트리거 (Strict Mode 중복 호출 및 새로고침 중복 생성 방지 가드)
   useEffect(() => {
-    let isAlreadyCreated = false
+    let isAlreadyTriggered = false
     try {
       if (typeof sessionStorage !== 'undefined') {
-        isAlreadyCreated = Boolean(sessionStorage.getItem(createdQuizSessionKey))
+        isAlreadyTriggered =
+          Boolean(sessionStorage.getItem(createdQuizSessionKey)) ||
+          Boolean(sessionStorage.getItem(triggeredSessionKey))
       }
     } catch {
       // ignore
@@ -221,16 +224,23 @@ export function LearningPreparationPage() {
 
     if (
       validationStatus === 'PASSED' &&
-      !isAlreadyCreated &&
+      !isAlreadyTriggered &&
       !hasTriggeredCreateRef.current &&
       !createQuizMutation.isPending &&
       !createQuizMutation.isSuccess &&
       !createQuizMutation.isError
     ) {
       hasTriggeredCreateRef.current = true
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem(triggeredSessionKey, 'true')
+        }
+      } catch {
+        // ignore
+      }
       createQuizMutation.mutate({ sourceValidationId: contentId })
     }
-  }, [validationStatus, createQuizMutation, contentId, createdQuizSessionKey])
+  }, [validationStatus, createQuizMutation, contentId, createdQuizSessionKey, triggeredSessionKey])
 
   // 퀴즈 생성이 진행 중일 때, CONNECT(2) -> GENERATE(3)로 자연스럽게 넘어가는 시각적 지연(Fake Progress) 추가
   useEffect(() => {
@@ -268,6 +278,7 @@ export function LearningPreparationPage() {
       try {
         if (typeof sessionStorage !== 'undefined') {
           sessionStorage.setItem(createdQuizSessionKey, String(quizId))
+          sessionStorage.removeItem(triggeredSessionKey)
           sessionStorage.removeItem('learningContentFormState')
         }
       } catch (e) {
@@ -280,7 +291,7 @@ export function LearningPreparationPage() {
 
       return () => window.clearTimeout(timer)
     }
-  }, [createQuizMutation.isSuccess, createQuizMutation.data, navigate, createdQuizSessionKey])
+  }, [createQuizMutation.isSuccess, createQuizMutation.data, navigate, createdQuizSessionKey, triggeredSessionKey])
 
   const complete = activeStage >= preparationSteps.length
   const currentStep = isInvalidContentId
