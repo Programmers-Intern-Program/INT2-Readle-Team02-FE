@@ -191,10 +191,37 @@ export function LearningPreparationPage() {
     }
   }
 
-  // PASSED 시 자동 퀴즈 생성 트리거 (Strict Mode 중복 호출 방지 ref 가드)
+  const createdQuizSessionKey = `created_quiz_${contentId}`
+
+  // 새로고침 시 이미 생성 완료된 퀴즈가 있는 경우 바로 풀이 화면으로 라우팅 (POST 중복 재호출 방지)
   useEffect(() => {
+    try {
+      if (typeof sessionStorage !== 'undefined' && Number.isInteger(contentId) && contentId > 0) {
+        const savedQuizId = sessionStorage.getItem(createdQuizSessionKey)
+        if (savedQuizId && !isRoutingRef.current) {
+          isRoutingRef.current = true
+          void navigate(generatePath(ROUTES.quiz, { quizId: savedQuizId }), { replace: true })
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [contentId, createdQuizSessionKey, navigate])
+
+  // PASSED 시 자동 퀴즈 생성 트리거 (Strict Mode 중복 호출 및 새로고침 재생성 방지 가드)
+  useEffect(() => {
+    let isAlreadyCreated = false
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        isAlreadyCreated = Boolean(sessionStorage.getItem(createdQuizSessionKey))
+      }
+    } catch {
+      // ignore
+    }
+
     if (
       validationStatus === 'PASSED' &&
+      !isAlreadyCreated &&
       !hasTriggeredCreateRef.current &&
       !createQuizMutation.isPending &&
       !createQuizMutation.isSuccess &&
@@ -203,7 +230,7 @@ export function LearningPreparationPage() {
       hasTriggeredCreateRef.current = true
       createQuizMutation.mutate({ sourceValidationId: contentId })
     }
-  }, [validationStatus, createQuizMutation, contentId])
+  }, [validationStatus, createQuizMutation, contentId, createdQuizSessionKey])
 
   // 퀴즈 생성이 진행 중일 때, CONNECT(2) -> GENERATE(3)로 자연스럽게 넘어가는 시각적 지연(Fake Progress) 추가
   useEffect(() => {
@@ -232,7 +259,7 @@ export function LearningPreparationPage() {
 
   const generatingNotice = quizGenerationNotices[generatingNoticeIndex]
 
-  // 퀴즈 생성 성공 시 4단계 완료 처리 및 라우팅
+  // 퀴즈 생성 성공 시 4단계 완료 처리 및 라우팅 (sessionStorage에 생성된 quizId 저장)
   useEffect(() => {
     if (createQuizMutation.isSuccess && createQuizMutation.data && !isRoutingRef.current) {
       isRoutingRef.current = true
@@ -240,6 +267,7 @@ export function LearningPreparationPage() {
 
       try {
         if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem(createdQuizSessionKey, String(quizId))
           sessionStorage.removeItem('learningContentFormState')
         }
       } catch (e) {
@@ -252,7 +280,7 @@ export function LearningPreparationPage() {
 
       return () => window.clearTimeout(timer)
     }
-  }, [createQuizMutation.isSuccess, createQuizMutation.data, navigate])
+  }, [createQuizMutation.isSuccess, createQuizMutation.data, navigate, createdQuizSessionKey])
 
   const complete = activeStage >= preparationSteps.length
   const currentStep = isInvalidContentId

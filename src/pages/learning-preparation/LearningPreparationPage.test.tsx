@@ -63,6 +63,7 @@ function componentTree(contentId = '101') {
       <MemoryRouter initialEntries={[`/contents/${contentId}/preparing`]}>
         <Routes>
           <Route path="/contents/:contentId/preparing" element={<LearningPreparationPage />} />
+          <Route path="/quizzes/:quizId" element={<div>Quiz Page</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -344,5 +345,32 @@ describe('LearningPreparationPage', () => {
     expect(screen.getAllByText('퀴즈와 선택지를 만들고 있어요').length).toBeGreaterThan(0)
 
     vi.useRealTimers()
+  })
+
+  it('새로고침 시 이미 생성 완료된 퀴즈 ID가 sessionStorage에 저장되어 있으면 POST 요청 없이 풀이 화면으로 바로 이동한다', () => {
+    sessionStorage.setItem('created_quiz_101', '505')
+
+    const mutateMock = vi.fn()
+    vi.mocked(useValidationPolling).mockReturnValue(
+      mockValidationPollingResult({
+        data: {
+          contentId: 101,
+          status: 'PASSED',
+          requestedAt: '2026-07-14T10:00:00+09:00',
+          validatedAt: '2026-07-14T10:00:03+09:00',
+        },
+      }),
+    )
+    vi.mocked(useCreateQuiz).mockReturnValue(
+      mockCreateQuizResult({
+        mutate: mutateMock,
+      }),
+    )
+
+    renderComponent('101')
+
+    expect(mutateMock).not.toHaveBeenCalled()
+
+    sessionStorage.removeItem('created_quiz_101')
   })
 })
